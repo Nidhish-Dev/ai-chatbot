@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta name="api-base-url" content="">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GrapeLabs Bot Control Panel</title>
+  <style>
+    :root { --ink:#21132d; --purple:#56208b; --purple-soft:#f3edf9; --amber:#d58b12; --bg:#f5f6f8; --surface:#fff; --text:#261b30; --muted:#6c6574; --border:#e5e1e9; --success:#137a4b; --warning:#9b6100; --shadow:0 10px 30px rgba(33,19,45,.045); }
+    * { box-sizing:border-box; margin:0; padding:0; }
+    body { font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; background:var(--bg); color:var(--text); display:flex; min-height:100vh; height:100vh; overflow:hidden; }
+    .icon { width:18px; height:18px; flex:none; stroke:currentColor; fill:none; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
+    .sidebar { width:258px; background:var(--ink); color:#fff; display:flex; flex-direction:column; flex:none; }
+    .brand { padding:22px 22px; font-size:17px; font-weight:750; letter-spacing:-.02em; border-bottom:1px solid rgba(255,255,255,.09); display:flex; align-items:center; gap:11px; }
+    .brand-mark { width:32px; height:32px; display:grid; place-items:center; color:#fff; background:linear-gradient(145deg,#7842a8,#4b1c75); border:1px solid rgba(255,255,255,.16); border-radius:10px; }
+    .brand-mark .icon { width:19px; height:19px; }
+    .nav-tabs { list-style:none; padding:18px 12px; flex:1; overflow-y:auto; }
+    .nav-item { padding:11px 12px; margin:3px 0; cursor:pointer; font-size:13px; font-weight:600; color:#c9bfd2; display:flex; align-items:center; gap:11px; border-radius:9px; transition:background .15s,color .15s; }
+    .nav-item .icon { width:17px; height:17px; opacity:.88; }
+    .nav-item:hover,.nav-item.active { background:rgba(255,255,255,.1); color:#fff; }
+    .nav-item.active { box-shadow:inset 3px 0 var(--amber); }
+    .main { min-width:0; flex:1; display:flex; flex-direction:column; overflow:hidden; }
+    .topbar { min-height:70px; background:#fff; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; padding:0 30px; gap:16px; }
+    .topbar-title { font-size:18px; font-weight:700; letter-spacing:-.025em; }
+    .topbar-actions { display:flex; gap:10px; align-items:center; }
+    .btn { min-height:38px; padding:9px 14px; border-radius:8px; font-weight:650; font-size:12.5px; cursor:pointer; border:1px solid transparent; transition:transform .15s,background .15s,border-color .15s; display:inline-flex; align-items:center; justify-content:center; gap:8px; text-decoration:none; white-space:nowrap; }
+    .btn:hover { transform:translateY(-1px); }
+    .btn .icon { width:16px; height:16px; }
+    .btn-primary { background:var(--amber); color:#24132f; box-shadow:0 2px 4px rgba(129,78,0,.12); }
+    .btn-primary:hover { background:#c77d08; }
+    .btn-secondary { background:#fff; color:var(--purple); border-color:#e2d7ec; }
+    .btn-secondary:hover { background:var(--purple-soft); border-color:#d4c2e5; }
+    .btn-success { background:#e8f5ed; color:var(--success); border-color:#c8e6d2; }
+    .btn-danger { background:#fff0f0; color:#b42318; }
+    .btn:disabled { opacity:.62; cursor:wait; transform:none; }
+    .content-area { flex:1; overflow-y:auto; padding:28px 30px 44px; }
+    .tab-content { display:none; max-width:1440px; margin:0 auto; }
+    .tab-content.active { display:block; animation:rise-in .2s ease-out; }
+    @keyframes rise-in { from { opacity:.6; transform:translateY(4px); } to { opacity:1; transform:translateY(0); } }
+    .card { background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:23px 24px; margin-bottom:18px; box-shadow:var(--shadow); }
+    .card-title { font-size:15px; font-weight:700; letter-spacing:-.015em; margin-bottom:16px; display:flex; justify-content:space-between; align-items:center; gap:16px; }
+    .card-title > span:first-child { display:inline-flex; align-items:center; gap:9px; }
+    .card-title .icon { color:var(--purple); width:18px; height:18px; }
+    .form-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(250px,1fr)); gap:17px; }
+    .form-group { display:flex; flex-direction:column; gap:7px; }
+    .form-label { font-size:12px; font-weight:650; color:#554d5d; }
+    .form-control { min-height:40px; padding:10px 12px; border:1px solid #ddd8e3; border-radius:8px; background:#fff; color:var(--text); font-size:13px; font-family:inherit; outline:none; transition:border .15s,box-shadow .15s; }
+    .form-control:focus { border-color:#9364b6; box-shadow:0 0 0 3px rgba(86,32,139,.1); }
+    textarea.form-control { min-height:120px; resize:vertical; line-height:1.55; }
+    .status-pill { display:inline-flex; align-items:center; gap:8px; padding:6px 10px; border-radius:999px; font-size:11.5px; font-weight:650; white-space:nowrap; }
+    .status-pill::before { content:""; width:7px; height:7px; border-radius:50%; background:currentColor; }
+    .status-connected { background:#eaf6ee; color:var(--success); border:1px solid #d0ead8; }
+    .status-fallback { background:#fff6e5; color:var(--warning); border:1px solid #f0dfb6; }
+    .upload-drop-zone { border:1.5px dashed #c7b5d7; border-radius:11px; padding:28px 22px; text-align:center; background:#fbf9fd; color:#57446b; transition:background .15s,border-color .15s; }
+    .upload-drop-zone.dragging { border-color:var(--purple); background:#f1eafb; }
+    .upload-drop-zone > strong { font-size:14px; }
+    .prompt-split { display:grid; grid-template-columns:1fr 1fr; gap:18px; }
+    .prompt-box { display:flex; flex-direction:column; gap:8px; }
+    .badge-live,.badge-draft { padding:5px 9px; border-radius:999px; font-size:10px; letter-spacing:.04em; font-weight:750; }
+    .badge-live { background:#eaf6ee; color:#267045; }
+    .badge-draft { background:#fff4e4; color:#94600a; }
+    #faqList > div { border:1px solid var(--border)!important; border-radius:9px!important; padding:15px!important; }
+    input[type="checkbox"] { accent-color:var(--purple); }
+    small { font-size:11px; }
+    @media (max-width:900px) { .sidebar { width:220px; } .content-area { padding:22px; } .topbar { padding:0 22px; } .prompt-split { grid-template-columns:1fr; } }
+    @media (max-width:640px) { body { height:auto; min-height:100vh; overflow:auto; display:block; } .sidebar { width:100%; } .brand { padding:13px 16px; } .nav-tabs { display:flex; padding:7px 10px; overflow-x:auto; } .nav-item { white-space:nowrap; padding:9px 10px; font-size:12px; } .nav-item.active { box-shadow:inset 0 -2px var(--amber); } .main { min-height:calc(100vh - 108px); overflow:visible; } .topbar { min-height:60px; padding:10px 15px; flex-wrap:wrap; } .topbar-title { font-size:16px; } .topbar-actions { gap:7px; } .btn { padding:8px 10px; font-size:11.5px; } .content-area { overflow:visible; padding:15px; } .card { padding:18px 16px; margin-bottom:13px; } .card-title { align-items:flex-start; } .form-grid { grid-template-columns:1fr; } }
+  </style>
+</head>
+<body>
+
+  <svg aria-hidden="true" focusable="false" width="0" height="0" style="position:absolute;overflow:hidden">
+    <symbol id="i-grapes" viewBox="0 0 24 24"><circle cx="8" cy="8" r="2.2"/><circle cx="14" cy="7" r="2.2"/><circle cx="5.5" cy="13" r="2.2"/><circle cx="11.5" cy="13" r="2.2"/><circle cx="17.5" cy="13" r="2.2"/><circle cx="8.5" cy="18" r="2.2"/><circle cx="14.5" cy="18" r="2.2"/><path d="M11 4c.6-1.6 2-2.4 4-2"/></symbol>
+    <symbol id="i-settings" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="m19.4 15 .1.1 1.4 1.1-1.4 2.4-1.7-.7a8 8 0 0 1-1.7 1l-.3 1.8h-2.8l-.3-1.8a8 8 0 0 1-1.7-1l-1.7.7-1.4-2.4L7.3 15a8 8 0 0 1 0-2l-1.4-1.1 1.4-2.4 1.7.7a8 8 0 0 1 1.7-1l.3-1.8h2.8l.3 1.8a8 8 0 0 1 1.7 1l1.7-.7 1.4 2.4-1.4 1.1a8 8 0 0 1-.1 2Z"/></symbol>
+    <symbol id="i-book" viewBox="0 0 24 24"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v16H6.5A2.5 2.5 0 0 0 4 21z"/><path d="M4 5.5v13A2.5 2.5 0 0 1 6.5 16H20M8 7h8M8 10h8"/></symbol>
+    <symbol id="i-sparkles" viewBox="0 0 24 24"><path d="m12 3 1.6 5.4L19 10l-5.4 1.6L12 17l-1.6-5.4L5 10l5.4-1.6L12 3Z"/><path d="m19 15 .8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8L19 15ZM5 2l.6 1.4L7 4l-1.4.6L5 6l-.6-1.4L3 4l1.4-.6L5 2Z"/></symbol>
+    <symbol id="i-external" viewBox="0 0 24 24"><path d="M14 4h6v6M20 4l-9 9"/><path d="M18 13v6a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h6"/></symbol>
+    <symbol id="i-publish" viewBox="0 0 24 24"><path d="M12 16V4m-5 5 5-5 5 5"/><path d="M5 14v5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-5"/></symbol>
+    <symbol id="i-cpu" viewBox="0 0 24 24"><rect x="5" y="5" width="14" height="14" rx="2"/><rect x="9" y="9" width="6" height="6" rx="1"/><path d="M9 1v4m6-4v4M9 19v4m6-4v4M1 9h4m-4 6h4m14-6h4m-4 6h4"/></symbol>
+    <symbol id="i-eye" viewBox="0 0 24 24"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></symbol>
+    <symbol id="i-eye-off" viewBox="0 0 24 24"><path d="m3 3 18 18M10.6 10.6a2 2 0 0 0 2.8 2.8"/><path d="M9.9 5.2A10.9 10.9 0 0 1 12 5c6.5 0 10 7 10 7a14 14 0 0 1-3.1 3.8M6.2 6.2C3.5 8 2 12 2 12s3.5 7 10 7c1 0 2-.2 2.9-.5"/></symbol>
+    <symbol id="i-save" viewBox="0 0 24 24"><path d="M5 3h12l4 4v14H3V3z"/><path d="M7 3v6h10V3M7 21v-8h10v8"/></symbol>
+    <symbol id="i-globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15 15 0 0 1 0 20M12 2a15 15 0 0 0 0 20"/></symbol>
+    <symbol id="i-search" viewBox="0 0 24 24"><circle cx="10.8" cy="10.8" r="7.3"/><path d="m16.2 16.2 4.3 4.3M8 10.8h5.6M10.8 8v5.6"/></symbol>
+    <symbol id="i-file" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M8 13h8M8 17h8"/></symbol>
+  </svg>
+
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <div class="brand">
+      <span class="brand-mark"><svg class="icon"><use href="#i-grapes"></use></svg></span>
+      <span>GrapeLabs</span>
+    </div>
+    <ul class="nav-tabs">
+      <li class="nav-item active" onclick="switchTab('settings')"><svg class="icon"><use href="#i-settings"></use></svg><span>Settings & AI key</span></li>
+      <li class="nav-item" onclick="switchTab('knowledge')"><svg class="icon"><use href="#i-book"></use></svg><span>Business data & CAG</span></li>
+      <li class="nav-item" onclick="switchTab('prompt')"><svg class="icon"><use href="#i-sparkles"></use></svg><span>AI prompt</span></li>
+    </ul>
+  </div>
+
+  <!-- Main Content -->
+  <div class="main">
+    <div class="topbar">
+      <div class="topbar-title" id="pageTitle">Settings & Configuration</div>
+      <div class="topbar-actions">
+        <a id="localDemoLink" href="/demo" class="btn btn-secondary" style="display:none"><svg class="icon"><use href="#i-globe"></use></svg>Preview bot</a>
+        <a id="viewWidgetLink" href="https://grapelabs.in" class="btn btn-secondary" target="_blank" rel="noopener"><svg class="icon"><use href="#i-external"></use></svg>View website</a>
+        <button class="btn btn-primary" onclick="publishDraft()"><svg class="icon"><use href="#i-publish"></use></svg>Publish changes</button>
+      </div>
+    </div>
+
+    <div class="content-area">
+
+      <!-- TAB 1: Settings & OpenAI -->
+      <div class="tab-content active" id="tab-settings">
+        <!-- OpenAI Connection Card -->
+        <div class="card" style="border: 2px solid #E2D7F3; background: #FAF7FD;">
+          <div class="card-title">
+            <span><svg class="icon"><use href="#i-cpu"></use></svg>OpenAI integration</span>
+            <span id="openAiStatusBadge" class="status-pill status-fallback">Local fallback · no API key</span>
+          </div>
+          <p style="font-size:13.5px; color:#555; margin-bottom:16px;">
+            Paste your OpenAI API key below to power the bot with live ChatGPT (<code style="background:#FFF; padding:2px 6px; border-radius:4px;">gpt-4o-mini</code> or <code style="background:#FFF; padding:2px 6px; border-radius:4px;">gpt-4o</code>).
+          </p>
+
+          <div class="form-grid">
+            <div class="form-group" style="grid-column: 1 / -1;">
+              <label class="form-label">OpenAI API Key (sk-...)</label>
+              <div style="display:flex; gap:10px;">
+                <input type="password" class="form-control" id="openAiApiKey" placeholder="sk-proj-..." style="flex:1;">
+                <button id="toggleApiKeyVisibility" class="btn btn-secondary" type="button" onclick="toggleKeyVisibility()" aria-pressed="false"><svg class="icon"><use href="#i-eye"></use></svg><span>Show</span></button>
+                <button class="btn btn-primary" type="button" onclick="saveOpenAiKey()"><svg class="icon"><use href="#i-save"></use></svg>Save & activate</button>
+              </div>
+              <div id="openAiKeyHint" style="margin-top:8px; font-size:12px; color:#666;">For security, a saved key is never sent back to this page. Paste a key here to show or hide it, or replace the saved key.</div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">OpenAI Model</label>
+              <select class="form-control" id="openAiModel">
+                <option value="gpt-4o-mini">gpt-4o-mini (Recommended - Fast, sharp, cost-effective)</option>
+                <option value="gpt-4o">gpt-4o (Most capable for complex reasoning)</option>
+                <option value="gpt-3.5-turbo">gpt-3.5-turbo (Legacy)</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">General Brand & Bot Settings</div>
+          <div class="form-grid">
+            <div class="form-group">
+              <label class="form-label">Brand Name</label>
+              <input type="text" class="form-control" id="brandName" value="GrapeLabs">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Tagline</label>
+              <input type="text" class="form-control" id="brandTagline" value="Automation & AI Systems">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Calendly Booking URL</label>
+              <input type="text" class="form-control" id="calendlyUrl" value="https://calendly.com/grapelabs/discovery">
+            </div>
+            <div class="form-group">
+              <label class="form-label">WhatsApp Display Name</label>
+              <input type="text" class="form-control" id="whatsappDisplayName" placeholder="e.g. GrapeLabs Support">
+            </div>
+            <div class="form-group">
+              <label class="form-label">WhatsApp Phone Number</label>
+              <input type="tel" class="form-control" id="whatsappPhoneNumber" placeholder="e.g. +91 98765 43210" autocomplete="tel">
+              <small style="color:#777;">Include the country code so the chat link opens correctly.</small>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Instagram Username</label>
+              <input type="text" class="form-control" id="instagramUsername" placeholder="e.g. @grapelabs">
+              <small style="color:#777;">Enter the username with or without @.</small>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Telegram Alert Chat ID</label>
+              <input type="text" class="form-control" id="telegramChatId" value="-1001234567890">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Alert Notification Email</label>
+              <input type="email" class="form-control" id="alertEmail" value="team@grapelabs.in">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Max Messages Without Contact (Soft Ask Cap)</label>
+              <input type="number" class="form-control" id="maxMessagesWithoutContact" value="20">
+            </div>
+          </div>
+          <button class="btn btn-secondary" onclick="saveSettingsDraft()" style="margin-top:16px;">Save settings to Draft</button>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Teaser Pop-up Settings</div>
+          <div class="form-grid">
+            <div class="form-group">
+              <label class="form-label">Teaser Delay (Seconds)</label>
+              <input type="number" class="form-control" id="teaserDelay" value="15">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Scroll Trigger Percent (%)</label>
+              <input type="number" class="form-control" id="scrollTrigger" value="50">
+            </div>
+            <div class="form-group" style="grid-column: 1 / -1;">
+              <label class="form-label">Teaser Message Copy</label>
+              <input type="text" class="form-control" id="teaserText" value="Got a repetitive task eating your week? Ask anything, or see what we'd automate for you.">
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Kill Switch (Pillar 1.4)</div>
+          <p style="font-size:13px; color:#666; margin-bottom:12px;">Turn the entire bot or specific channels on or off instantly with zero code changes.</p>
+          <div style="display:flex; gap:16px;">
+            <label><input type="checkbox" id="killSwitchOverall" onchange="toggleKillSwitch('overall', this.checked)" checked> Overall Bot Active</label>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 2: Business Data & CAG -->
+      <div class="tab-content" id="tab-knowledge">
+        <div class="card">
+          <div class="card-title"><span><svg class="icon"><use href="#i-globe"></use></svg>Use your website as bot knowledge</span></div>
+          <p style="font-size:13px; color:#666; margin-bottom:12px;">Enter a public website URL and the backend will read the homepage plus relevant About, services, FAQ, and policy pages. The extracted content becomes an additional source for bot answers.</p>
+          <div style="display:flex; gap:10px; align-items:flex-end; flex-wrap:wrap;">
+            <div class="form-group" style="flex:1; min-width:240px; margin:0;">
+              <label class="form-label" for="knowledgeWebsiteUrl">Website URL</label>
+              <input type="url" class="form-control" id="knowledgeWebsiteUrl" placeholder="https://yourbusiness.com">
+            </div>
+            <button class="btn btn-primary" id="scrapeWebsiteButton" type="button" onclick="scrapeWebsiteForKnowledge()"><svg class="icon"><use href="#i-search"></use></svg><span id="scrapeButtonLabel">Scrape website</span></button>
+          </div>
+          <div id="websiteScrapeStatus" role="status" style="margin-top:10px; font-size:13px; color:#666;"></div>
+          <details id="websiteKnowledgeDetails" style="margin-top:10px; display:none;">
+            <summary style="cursor:pointer; color:#4A1080; font-size:13px; font-weight:600;">Preview extracted website knowledge</summary>
+            <pre id="websiteKnowledgePreview" style="white-space:pre-wrap; overflow-wrap:anywhere; max-height:260px; overflow:auto; padding:12px; border-radius:8px; background:#F8F6FA; color:#444; font-family:monospace; font-size:12px; line-height:1.5;"></pre>
+          </details>
+          <p style="font-size:12px; color:#666; margin-top:10px;">Scraping saves the extracted text to Draft. Review the preview, then click Publish Changes to make it live.</p>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Generate FAQs from a document</div>
+          <div class="upload-drop-zone" id="knowledgeDropZone" role="button" tabindex="0" onclick="document.getElementById('knowledgeFile').click()">
+            <strong>Drop a PDF, DOC, or DOCX here</strong>
+            <p style="font-size:13px; margin:8px 0 12px;">ChatGPT will draft question and answer pairs from its contents (10 MB max).</p>
+            <input type="file" id="knowledgeFile" accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" hidden>
+            <button type="button" class="btn btn-secondary" onclick="event.stopPropagation(); document.getElementById('knowledgeFile').click()">Choose document</button>
+            <div id="knowledgeUploadStatus" role="status" style="margin-top:12px; font-size:13px;"></div>
+          </div>
+          <p style="font-size:12px; color:#666; margin-top:12px;">Generated FAQs are saved to Firebase Draft. Review them below, then publish to make the bot use them.</p>
+        </div>
+
+        <div class="card">
+          <div class="card-title">
+            <span><svg class="icon"><use href="#i-file"></use></svg>Custom business knowledge</span>
+            <button class="btn btn-primary" onclick="saveCustomKnowledge()"><svg class="icon"><use href="#i-save"></use></svg>Save knowledge</button>
+          </div>
+          <p style="font-size:13px; color:#666; margin-bottom:12px;">
+            Paste any business information, company services, customer policies, or rules here. ChatGPT will use this directly as its source of truth.
+          </p>
+          <textarea class="form-control" id="customKnowledgeInput" style="height: 180px; font-family: monospace;" placeholder="Paste your company context, service offerings, policies, or client guidelines here..."></textarea>
+        </div>
+
+        <div class="card">
+          <div class="card-title">
+            <span>FAQ knowledge base (CAG source of truth)</span>
+          </div>
+          <p style="font-size:13px; color:#666; margin-bottom:16px;">The bot strictly answers from these FAQs, preventing hallucinations.</p>
+          <div id="faqList" style="display:flex; flex-direction:column; gap:12px;"></div>
+        </div>
+      </div>
+
+      <!-- TAB 3: Prompt & AI Instruction -->
+      <div class="tab-content" id="tab-prompt">
+        <div class="card">
+          <div class="card-title">Change the Prompt with AI (Section 6.2)</div>
+          <p style="font-size:13px; color:#666; margin-bottom:10px;">Type a plain instruction (e.g. "Make replies punchier and use Hinglish when the visitor does"). AI rewrites the Draft prompt for your review.</p>
+          <div style="display:flex; gap:10px;">
+            <input type="text" class="form-control" id="aiInstruction" placeholder="e.g. Make answers punchier and highlight WhatsApp automation features" style="flex:1;">
+            <button class="btn btn-primary" onclick="submitAIPromptRewrite(this)"><svg class="icon"><use href="#i-sparkles"></use></svg><span id="rewriteButtonLabel">Rewrite with AI</span></button>
+          </div>
+        </div>
+
+        <div class="prompt-split">
+          <div class="prompt-box card">
+            <div class="card-title">Live Prompt <span class="badge-live">ACTIVE</span></div>
+            <textarea class="form-control" id="promptLive" readonly style="height:380px; background:#F8FAFC;"></textarea>
+          </div>
+          <div class="prompt-box card">
+            <div class="card-title">Draft Prompt <span class="badge-draft">EDITABLE</span></div>
+            <textarea class="form-control" id="promptDraft" style="height:380px;"></textarea>
+            <button class="btn btn-secondary" onclick="saveDraftPrompt()" style="margin-top:10px;"><svg class="icon"><use href="#i-save"></use></svg>Save draft</button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    const API_BASE = (document.querySelector('meta[name="api-base-url"]')?.content || window.location.origin).replace(/\/$/, '');
+    let currentConfig = null;
+    let currentOpenAiStatus = {};
+    if (['localhost', '127.0.0.1'].includes(window.location.hostname)) {
+      document.getElementById('localDemoLink').style.display = 'inline-flex';
+    }
+
+    function switchTab(tabId) {
+      document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+
+      const targetNav = Array.from(document.querySelectorAll('.nav-item')).find(el => el.getAttribute('onclick')?.includes(tabId));
+      if (targetNav) targetNav.classList.add('active');
+
+      const targetTab = document.getElementById(`tab-${tabId}`);
+      if (targetTab) targetTab.classList.add('active');
+
+      document.getElementById('pageTitle').innerText = targetNav ? targetNav.innerText : 'Control Panel';
+    }
+
+    async function loadConfig() {
+      try {
+        const res = await fetch(`${API_BASE}/api/config`);
+        const data = await res.json();
+        if (data.success && data.config) {
+          currentConfig = data.config;
+          currentOpenAiStatus = data.openai || {};
+          populateUI(data.config, data.openai);
+        }
+      } catch (e) {
+        console.error('Error loading config:', e);
+      }
+    }
+
+    function populateUI(cfg, openAiData = {}) {
+      // OpenAI Data
+      if (openAiData.hasKey) {
+        document.getElementById('openAiStatusBadge').className = 'status-pill status-connected';
+        document.getElementById('openAiStatusBadge').innerText = `Connected to ChatGPT · ${openAiData.model}`;
+        document.getElementById('openAiApiKey').placeholder = `Active Key: ${openAiData.maskedKey}`;
+      } else {
+        document.getElementById('openAiStatusBadge').className = 'status-pill status-fallback';
+        document.getElementById('openAiStatusBadge').innerText = 'Local fallback · no API key';
+      }
+      if (openAiData.model) {
+        document.getElementById('openAiModel').value = openAiData.model;
+      }
+
+      document.getElementById('viewWidgetLink').href = cfg.links?.websiteUrl || 'https://grapelabs.in';
+      document.getElementById('knowledgeWebsiteUrl').value = cfg.draft?.links?.websiteUrl || cfg.links?.websiteUrl || '';
+      document.getElementById('brandName').value = cfg.draft?.cagCompanyName || cfg.cagCompanyName || cfg.draft?.branding?.brandName || cfg.branding?.brandName || '';
+      document.getElementById('brandTagline').value = cfg.branding?.brandTagline || '';
+      document.getElementById('calendlyUrl').value = cfg.links?.calendlyUrl || '';
+      const savedChannels = cfg.draft?.channels || cfg.channels || {};
+      const savedLinks = cfg.draft?.links || cfg.links || {};
+      document.getElementById('whatsappDisplayName').value = savedChannels.whatsapp?.displayName || cfg.branding?.brandName || '';
+      document.getElementById('whatsappPhoneNumber').value = savedLinks.whatsappRefNumber || savedChannels.whatsapp?.handoffContact || '';
+      document.getElementById('instagramUsername').value = savedChannels.instagram?.username || savedChannels.instagram?.handoffContact || '';
+      document.getElementById('telegramChatId').value = cfg.alerts?.telegramChatId || '';
+      document.getElementById('alertEmail').value = cfg.alerts?.alertEmail || '';
+      document.getElementById('maxMessagesWithoutContact').value = cfg.limits?.maxMessagesWithoutContact || 20;
+
+      document.getElementById('customKnowledgeInput').value = cfg.draft?.customKnowledge || cfg.customKnowledge || '';
+      const scrapedWebsiteKnowledge = cfg.draft?.websiteKnowledge || cfg.websiteKnowledge || '';
+      document.getElementById('websiteKnowledgePreview').textContent = scrapedWebsiteKnowledge;
+      document.getElementById('websiteKnowledgeDetails').style.display = scrapedWebsiteKnowledge ? 'block' : 'none';
+      document.getElementById('websiteScrapeStatus').textContent = scrapedWebsiteKnowledge
+        ? `Website knowledge is saved in ${cfg.draft?.websiteKnowledge ? 'Draft' : 'Live'} (${scrapedWebsiteKnowledge.length.toLocaleString()} characters).`
+        : '';
+
+      document.getElementById('teaserDelay').value = cfg.teaser?.delaySeconds || 15;
+      document.getElementById('scrollTrigger').value = cfg.teaser?.scrollThresholdPercent || 50;
+      document.getElementById('teaserText').value = cfg.teaser?.text || '';
+
+
+      document.getElementById('killSwitchOverall').checked = !!cfg.active;
+
+      document.getElementById('promptLive').value = cfg.promptLive || '';
+      document.getElementById('promptDraft').value = cfg.promptDraft || cfg.promptLive || '';
+
+      // FAQs
+      const faqList = document.getElementById('faqList');
+      faqList.innerHTML = '';
+      (cfg.draft?.faqs || cfg.faqs || []).forEach((faq, i) => {
+        const div = document.createElement('div');
+        div.style = 'border: 1px solid #E2E8F0; border-radius: 8px; padding: 12px; background: #FFF;';
+        const question = document.createElement('strong');
+        question.textContent = `Q${i + 1}: ${faq.question}`;
+        const answer = document.createElement('p');
+        answer.textContent = faq.answer;
+        answer.style = 'margin-top:6px; color:#444; font-size:13px;';
+        div.append(question, answer);
+        if (faq.source) {
+          const source = document.createElement('div');
+          source.textContent = `Source: ${faq.source}`;
+          source.style = 'margin-top:6px; color:#777; font-size:11px;';
+          div.appendChild(source);
+        }
+        faqList.appendChild(div);
+      });
+
+    }
+
+    function toggleKeyVisibility() {
+      const input = document.getElementById('openAiApiKey');
+      const button = document.getElementById('toggleApiKeyVisibility');
+      if (!input.value) {
+        document.getElementById('openAiKeyHint').textContent = currentOpenAiStatus.hasKey
+          ? 'The saved API key is hidden and cannot be retrieved in the panel. Paste a key here to replace it.'
+          : 'Paste an API key first, then click Show to view it.';
+        return;
+      }
+      const reveal = input.type === 'password';
+      input.type = reveal ? 'text' : 'password';
+      button.querySelector('use').setAttribute('href', reveal ? '#i-eye-off' : '#i-eye');
+      button.querySelector('span').textContent = reveal ? 'Hide' : 'Show';
+      button.setAttribute('aria-pressed', String(reveal));
+    }
+
+    async function saveOpenAiKey() {
+      const key = document.getElementById('openAiApiKey').value.trim();
+      const model = document.getElementById('openAiModel').value;
+      if (!key) return alert('Please enter an OpenAI API key.');
+
+      try {
+        const res = await fetch(`${API_BASE}/api/config/openai`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ apiKey: key, model })
+        });
+        const data = await res.json();
+        if (data.success) {
+          alert('OpenAI API key saved securely in Firebase and activated.');
+          loadConfig();
+        } else {
+          alert('Failed: ' + data.error);
+        }
+      } catch (e) {
+        alert('Error saving key: ' + e.message);
+      }
+    }
+
+    async function saveCustomKnowledge() {
+      const text = document.getElementById('customKnowledgeInput').value;
+      const current = currentConfig || {};
+      const links = { ...(current.links || {}), ...(current.draft?.links || {}), websiteUrl: document.getElementById('knowledgeWebsiteUrl').value.trim() };
+      const res = await fetch(`${API_BASE}/api/config/draft`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ clientId: 'grapelabs', draft: { customKnowledge: text, links } })
+      });
+      const data = await res.json();
+      if (!data.success) return alert(data.error || 'Could not save knowledge to Draft.');
+      currentConfig = data.config;
+      alert('Custom Knowledge saved to Draft. Click "Publish Changes" at the top to apply it live to ChatGPT!');
+    }
+
+    async function scrapeWebsiteForKnowledge() {
+      const websiteUrl = document.getElementById('knowledgeWebsiteUrl').value.trim();
+      if (!websiteUrl) return alert('Enter a public website URL first.');
+      const button = document.getElementById('scrapeWebsiteButton');
+      const status = document.getElementById('websiteScrapeStatus');
+      button.disabled = true;
+      document.getElementById('scrapeButtonLabel').textContent = 'Scraping…';
+      status.textContent = 'Reading the homepage and relevant business pages...';
+      try {
+        const res = await fetch(`${API_BASE}/api/knowledge/scrape-website`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ clientId: 'grapelabs', websiteUrl })
+        });
+        const responseText = await res.text();
+        let data;
+        try {
+          data = JSON.parse(responseText);
+        } catch (_) {
+          const returnedHtml = /<\s*!doctype\s+html|<\s*html[\s>]/i.test(responseText);
+          if (returnedHtml) {
+            throw new Error(`The backend returned an HTML page instead of the scrape API response (HTTP ${res.status}). Restart the backend from the backend folder, then reload this control panel.`);
+          }
+          throw new Error(`The backend returned an invalid response (HTTP ${res.status}).`);
+        }
+        if (!res.ok || !data.success) throw new Error(data.error || 'Could not scrape this website.');
+        currentConfig = data.config;
+        document.getElementById('knowledgeWebsiteUrl').value = data.config.draft?.links?.websiteUrl || websiteUrl;
+        document.getElementById('websiteKnowledgePreview').textContent = data.preview || '';
+        document.getElementById('websiteKnowledgeDetails').style.display = 'block';
+        status.textContent = `Scraped ${data.pageCount} page(s), extracted ${data.characterCount.toLocaleString()} characters, and saved to Draft. Publish Changes to use it for live answers.`;
+      } catch (err) {
+        status.textContent = err.message;
+      } finally {
+        button.disabled = false;
+        document.getElementById('scrapeButtonLabel').textContent = 'Scrape website';
+      }
+    }
+
+    const knowledgeFileInput = document.getElementById('knowledgeFile');
+    const knowledgeDropZone = document.getElementById('knowledgeDropZone');
+    knowledgeFileInput.addEventListener('change', () => {
+      if (knowledgeFileInput.files[0]) uploadKnowledgeDocument(knowledgeFileInput.files[0]);
+    });
+    knowledgeDropZone.addEventListener('dragover', e => { e.preventDefault(); knowledgeDropZone.classList.add('dragging'); });
+    knowledgeDropZone.addEventListener('dragleave', () => knowledgeDropZone.classList.remove('dragging'));
+    knowledgeDropZone.addEventListener('drop', e => {
+      e.preventDefault();
+      knowledgeDropZone.classList.remove('dragging');
+      if (e.dataTransfer.files[0]) uploadKnowledgeDocument(e.dataTransfer.files[0]);
+    });
+    knowledgeDropZone.addEventListener('keydown', e => {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); knowledgeFileInput.click(); }
+    });
+
+    async function uploadKnowledgeDocument(file) {
+      const status = document.getElementById('knowledgeUploadStatus');
+      const extension = file.name.slice(file.name.lastIndexOf('.')).toLowerCase();
+      const mimeTypes = {
+        '.pdf': 'application/pdf',
+        '.docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        '.doc': 'application/msword'
+      };
+      if (!mimeTypes[extension]) { status.innerText = 'Choose a PDF, DOC, or DOCX file.'; return; }
+      if (file.size > 10 * 1024 * 1024) { status.innerText = 'File must be 10 MB or smaller.'; return; }
+      status.innerText = `Reading ${file.name}…`;
+      knowledgeFileInput.disabled = true;
+      try {
+        const dataUrl = await new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result);
+          reader.onerror = () => reject(new Error('Could not read this file.'));
+          reader.readAsDataURL(file);
+        });
+        status.innerText = 'Asking ChatGPT to draft FAQs…';
+        const res = await fetch(`${API_BASE}/api/knowledge/generate-faqs`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            clientId: 'grapelabs',
+            fileName: file.name,
+            mimeType: mimeTypes[extension],
+            base64: dataUrl.split(',')[1]
+          })
+        });
+        const result = await res.json();
+        if (!res.ok || !result.success) throw new Error(result.error || 'FAQ generation failed.');
+        currentConfig = result.config;
+        populateUI(currentConfig, currentOpenAiStatus);
+        const companyLabel = result.companyName ? ` for ${result.companyName}` : '';
+        status.innerText = `Generated ${result.generatedCount} FAQs${companyLabel} from ${file.name}. The draft now has ${result.totalFaqCount} FAQs total. Review them below, then publish.`;
+      } catch (err) {
+        status.innerText = err.message;
+      } finally {
+        knowledgeFileInput.disabled = false;
+        knowledgeFileInput.value = '';
+      }
+    }
+
+    async function saveSettingsDraft() {
+      const current = currentConfig || {};
+      const whatsappName = document.getElementById('whatsappDisplayName').value.trim();
+      const whatsappNumber = document.getElementById('whatsappPhoneNumber').value.trim();
+      const instagramUsername = document.getElementById('instagramUsername').value.trim().replace(/^@+/, '');
+      if (whatsappNumber && !/^\+?[\d\s().-]{7,20}$/.test(whatsappNumber)) {
+        return alert('Enter a valid WhatsApp phone number with country code.');
+      }
+      if (instagramUsername && !/^[A-Za-z0-9._]{1,30}$/.test(instagramUsername)) {
+        return alert('Enter a valid Instagram username (letters, numbers, periods, or underscores).');
+      }
+      const draft = {
+        branding: { ...(current.branding || {}), brandName: document.getElementById('brandName').value.trim(), brandTagline: document.getElementById('brandTagline').value.trim() },
+        cagCompanyName: document.getElementById('brandName').value.trim(),
+        links: { ...(current.links || {}), calendlyUrl: document.getElementById('calendlyUrl').value.trim(), whatsappRefNumber: whatsappNumber },
+        channels: {
+          ...(current.channels || {}),
+          whatsapp: { ...(current.channels?.whatsapp || {}), displayName: whatsappName, handoffContact: whatsappNumber },
+          instagram: { ...(current.channels?.instagram || {}), username: instagramUsername, handoffContact: instagramUsername }
+        },
+        alerts: { ...(current.alerts || {}), telegramChatId: document.getElementById('telegramChatId').value.trim(), alertEmail: document.getElementById('alertEmail').value.trim() },
+        limits: { ...(current.limits || {}), maxMessagesWithoutContact: Number(document.getElementById('maxMessagesWithoutContact').value) },
+        teaser: { ...(current.teaser || {}), delaySeconds: Number(document.getElementById('teaserDelay').value), scrollThresholdPercent: Number(document.getElementById('scrollTrigger').value), text: document.getElementById('teaserText').value }
+      };
+      const res = await fetch(`${API_BASE}/api/config/draft`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ clientId: 'grapelabs', draft }) });
+      const data = await res.json();
+      if (!data.success) return alert(data.error || 'Could not save draft settings.');
+      currentConfig = data.config;
+      alert('Settings saved to Draft. Publish the changes when ready.');
+    }
+
+    async function toggleKillSwitch(channel, enabled) {
+      await fetch(`${API_BASE}/api/config/kill-switch`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ clientId: 'grapelabs', channel, enabled })
+      });
+    }
+
+    async function publishDraft() {
+      if (!confirm('Publish all draft settings to the live bot?')) return;
+      try {
+        const res = await fetch(`${API_BASE}/api/config/publish`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ clientId: 'grapelabs', author: 'Admin' })
+        });
+        const data = await res.json();
+        if (data.success) {
+          alert('Changes published successfully.');
+          loadConfig();
+        }
+      } catch (e) {
+        alert('Failed to publish: ' + e.message);
+      }
+    }
+
+    async function submitAIPromptRewrite(btn) {
+      const instruction = document.getElementById('aiInstruction').value.trim();
+      if (!instruction) return alert('Please enter an instruction.');
+
+      const label = document.getElementById('rewriteButtonLabel');
+      label.innerText = 'Rewriting…';
+      btn.disabled = true;
+
+      try {
+        const res = await fetch(`${API_BASE}/api/config/prompt-ai`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ clientId: 'grapelabs', instruction })
+        });
+        const data = await res.json();
+        if (data.success && data.promptDraft) {
+          document.getElementById('promptDraft').value = data.promptDraft;
+          alert('Draft prompt updated by AI. Review and click Publish when ready!');
+        }
+      } catch (e) {
+        alert('Error: ' + e.message);
+      } finally {
+        label.innerText = 'Rewrite with AI';
+        btn.disabled = false;
+      }
+    }
+
+    async function saveDraftPrompt() {
+      const draft = document.getElementById('promptDraft').value;
+      await fetch(`${API_BASE}/api/config/draft`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ clientId: 'grapelabs', draft: { promptDraft: draft } })
+      });
+      alert('Draft saved.');
+    }
+
+    loadConfig();
+  </script>
+</body>
+</html>
