@@ -2,6 +2,7 @@ const { isValidEmail, isValidPhone } = require('../utils/disposableEmails');
 const { crawlAndBuildProfile, buildFallbackProfileFromDescription } = require('../ai/siteCrawler');
 const { PersonRepository, SessionRepository } = require('../db/models');
 const { callAI } = require('../ai/openaiService');
+const { buildSystemPrompt } = require('../ai/promptBuilder');
 const LeadService = require('./leadService');
 
 // In-memory demo sessions map (expires in 30 mins, limits to 15 messages)
@@ -156,18 +157,91 @@ class TryItService {
     };
   }
 
+  /** Start an isolated demo trained from FAQs generated from an uploaded CAG document. */
+  static async startCagTryIt({ name, email, phone, fileName, companyName, faqs, consent, ip = '127.0.0.1', personId, clientId = 'grapelabs', config }) {
+    this.pruneExpiredState();
+    if (!consent) throw new Error('Please agree to the privacy policy and contact terms to try the demo.');
+    if ((!email || !isValidEmail(email)) && (!phone || !isValidPhone(phone))) {
+      throw new Error('Please provide a valid work email or phone number (disposable emails are blocked).');
+    }
+    if (!Array.isArray(faqs) || !faqs.length) throw new Error('No question and answer pairs could be generated from this document.');
+
+    const rateEmail = email && isValidEmail(email) ? email.toLowerCase().trim() : '';
+    const today = new Date().toISOString().slice(0, 10);
+    const rateLimitKey = `${today}_${rateEmail || ip}`;
+    const count = dailyTries.get(rateLimitKey) || 0;
+    if (count >= (config.limits?.tryItDailyLimitPerUser || 3)) throw new Error('You have reached the maximum number of demos for today.');
+    dailyTries.set(rateLimitKey, count + 1);
+
+    const businessName = String(companyName || '').trim() || name?.trim() || 'Your Business';
+    const profile = {
+      success: true,
+      businessName,
+      whatTheySell: `Business knowledge extracted from ${fileName}`,
+      keyProducts: [],
+      policies: 'Answer only from the uploaded business knowledge document.',
+      brandColor: config.branding?.colors?.royalPurple || '#4A1080',
+      logoUrl: null,
+      source: 'cag'
+    };
+    const demoSessionId = 'demo_' + Math.random().toString(36).substring(2, 10);
+    const session = {
+      id: demoSessionId,
+      demoSession: true,
+      mode: 'cag',
+      clientId,
+      personId: personId || null,
+      profile,
+      knowledgeFaqs: faqs.slice(0, 80),
+      chatHistory: [],
+      messageCount: 0,
+      maxMessages: config.limits?.tryItMaxMessages || 15,
+      createdAt: Date.now(),
+      expiresAt: Date.now() + (config.limits?.tryItSessionMinutes || 30) * 60 * 1000
+    };
+    demoSessions.set(demoSessionId, session);
+    // Persist uploaded FAQ context because separate Vercel invocations may handle each chat turn.
+    await SessionRepository.createOrUpdate(demoSessionId, session);
+
+    if (personId) {
+      const person = await PersonRepository.get(personId);
+      if (person) {
+        const patch = {
+          'identifiers.email': email ? email.toLowerCase().trim() : person.identifiers.email,
+          'identifiers.phone': phone ? phone.trim() : person.identifiers.phone,
+          'fields.name': name || person.fields.name,
+          tryItUsed: true,
+          tryItProfile: profile,
+          'consentFlags.service': true,
+          'consentFlags.marketing': true,
+          [`consentFlags.channels.${email ? 'email' : 'whatsapp'}`]: true
+        };
+        await PersonRepository.update(personId, patch);
+        await LeadService.evaluateLead({
+          person: { ...person, ...patch },
+          newSignals: ['used_try_it', 'contact_details_given'],
+          messageCount: 5,
+          config
+        });
+      }
+    }
+
+    return { demoSessionId, profile, generatedFaqCount: faqs.length };
+  }
+
   /**
    * Demo chat mode answering strictly from the crawled business profile
    */
   static async chatDemo({ demoSessionId, message, config }) {
     this.pruneExpiredState();
-    const session = demoSessions.get(demoSessionId);
+    const session = demoSessions.get(demoSessionId) || await SessionRepository.get(demoSessionId);
     if (!session) {
       throw new Error('Demo session has expired or not found. Please start a new demo.');
     }
 
     if (Date.now() > session.expiresAt) {
       demoSessions.delete(demoSessionId);
+      if (session.mode === 'cag') await SessionRepository.delete(demoSessionId);
       throw new Error('This 30-minute demo session has ended. Book a discovery call to get this live on your site!');
     }
 
@@ -183,7 +257,25 @@ class TryItService {
     session.messageCount += 1;
 
     const profile = session.profile || {};
-    const systemPrompt = `You are a customer-facing AI assistant for ${profile.businessName || 'this business'}.
+    const demoConfig = session.mode === 'cag' ? {
+      ...config,
+      name: profile.businessName,
+      cagCompanyName: profile.businessName,
+      branding: { ...(config.branding || {}), brandName: profile.businessName, brandTagline: '' },
+      // Reuse the main bot's answer policy while limiting business facts to
+      // this uploaded document, so live knowledge cannot leak into a demo.
+      faqs: session.knowledgeFaqs || [],
+      products: [],
+      consultant: { questions: [] },
+      customKnowledge: '',
+      knowledge: '',
+      websiteKnowledge: '',
+      channels: {},
+      links: {}
+    } : config;
+    const systemPrompt = session.mode === 'cag'
+      ? buildSystemPrompt(demoConfig, {})
+      : `You are a customer-facing AI assistant for ${profile.businessName || 'this business'}.
 Brand Offerings: ${profile.whatTheySell || 'Products and services'}
 Key Products: ${(profile.keyProducts || []).join(', ')}
 Policies: ${profile.policies || 'Standard support policies'}
@@ -194,16 +286,28 @@ STRICT RULES:
 2. If asked something unknown, say: "I'll pass that question to our support team right away! You can also reach our staff directly."
 3. Keep answers under 3 sentences, helpful, and natural.`;
 
+    const chatHistory = session.mode === 'cag' ? (session.chatHistory || []) : [];
+    const aiMessages = [...chatHistory, { role: 'user', content: message }].slice(-12);
+
     const aiResult = await callAI({
-      messages: [{ role: 'user', content: message }],
+      messages: aiMessages,
       systemPrompt,
-      config,
+      config: demoConfig,
       personContext: {}
     });
 
+    if (session.mode === 'cag') {
+      session.chatHistory = [...aiMessages, { role: 'assistant', content: aiResult.reply }].slice(-12);
+      demoSessions.set(demoSessionId, session);
+      await SessionRepository.createOrUpdate(demoSessionId, {
+        chatHistory: session.chatHistory,
+        messageCount: session.messageCount
+      });
+    }
+
     return {
       reply: aiResult.reply,
-      buttons: ["Do you deliver?", "What products do you offer?", "Book GrapeLabs call"],
+      buttons: session.mode === 'cag' ? (aiResult.buttons || []) : ["Do you deliver?", "What products do you offer?", "Book GrapeLabs call"],
       cards: [],
       remainingMessages: session.maxMessages - session.messageCount,
       brandHeader: {

@@ -167,6 +167,11 @@ class SessionRepository {
     }
   }
 
+  static async delete(sessionId) {
+    const db = getDb();
+    await db.collection(COLLECTIONS.SESSIONS).doc(sessionId).delete();
+  }
+
   static async incrementMessageCount(sessionId) {
     const db = getDb();
     const ref = db.collection(COLLECTIONS.SESSIONS).doc(sessionId);
