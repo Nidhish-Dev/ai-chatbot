@@ -3,12 +3,16 @@ const path = require('path');
 dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 
 function normalizePrivateKey(value) {
-  return value
-    // dotenv turns \"\\\\n\" sequences into a backslash plus a real newline.
-    .replace(/\\\r?\n/g, '\n')
-    // Also accept the common literal \\n representation from deployment dashboards.
-    .replace(/\\n/g, '\n')
-    .replace(/\r\n/g, '\n')
+  let key = String(value || '').trim();
+  // Accept a PEM pasted with optional surrounding quotes from a JSON file.
+  if ((key.startsWith('"') && key.endsWith('"')) || (key.startsWith("'") && key.endsWith("'"))) {
+    key = key.slice(1, -1);
+  }
+  // Deployment dashboards may preserve multiple backslashes before each n.
+  // Replace the whole escaped sequence so none remain inside the PEM body.
+  return key
+    .replace(/\\+n/g, '\n')
+    .replace(/\r\n?/g, '\n')
     .trim();
 }
 
