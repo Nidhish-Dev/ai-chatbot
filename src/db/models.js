@@ -36,6 +36,16 @@ class PersonRepository {
     return doc.exists ? doc.data() : null;
   }
 
+  static async listByClient(clientId = 'grapelabs', limit = 500) {
+    const db = getDb();
+    const snapshot = await db.collection(COLLECTIONS.PEOPLE)
+      .where('clientId', '==', clientId)
+      .limit(limit)
+      .get();
+    return snapshot.docs.map(doc => doc.data())
+      .sort((a, b) => new Date(b.updatedAt || b.createdAt || 0) - new Date(a.updatedAt || a.createdAt || 0));
+  }
+
   static async create(personData) {
     const db = getDb();
     const personId = personData.id || 'person_' + Math.random().toString(36).substring(2, 10);
@@ -120,6 +130,21 @@ class PersonRepository {
   static async delete(personId) {
     const db = getDb();
     await db.collection(COLLECTIONS.PEOPLE).doc(personId).delete();
+  }
+
+  static async deleteWithRelatedData(personId) {
+    const db = getDb();
+    const relatedCollections = [COLLECTIONS.MESSAGES, COLLECTIONS.SESSIONS, COLLECTIONS.EVENTS, COLLECTIONS.TOKENS];
+    const snapshots = await Promise.all(relatedCollections.map(collection =>
+      db.collection(collection).where('personId', '==', personId).get()
+    ));
+    for (let i = 0; i < relatedCollections.length; i++) {
+      for (const doc of snapshots[i].docs) {
+        await db.collection(relatedCollections[i]).doc(doc.id).delete();
+      }
+    }
+    await db.collection(COLLECTIONS.PEOPLE).doc(personId).delete();
+    return snapshots.reduce((total, snapshot) => total + snapshot.size, 0);
   }
 
   static async movePersonMessages(sourcePersonId, targetPersonId) {

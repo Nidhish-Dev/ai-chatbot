@@ -75,6 +75,14 @@ module.exports = {
     chips: []
   },
 
+  nudges: {
+    enabled: true,
+    minExchanges: 3,
+    cooldownExchanges: 3,
+    delaySeconds: 30,
+    instruction: 'Be helpful and low pressure. Suggest a relevant next step based on what the visitor asked; never repeat a question they already answered.'
+  },
+
   // Links & Integrations
   links: {
     calendlyUrl: 'https://calendly.com/grapelabs/discovery',
@@ -149,21 +157,21 @@ module.exports = {
       name: 'Omnichannel Cart Recovery & WhatsApp Concierge',
       industry: ['D2C / E-commerce', 'Retail', 'E-commerce'],
       description: 'Automatically nudges abandoned carts on WhatsApp with personalised offers and recovers 18-25% of lost revenue.',
-      impact: 'Recovers 18-25% lost checkouts and answers product queries instantly 24/7.'
+      impact: 'Recovers 18-25% lost checkouts and answers product queries instantly 24/7.', imageUrl: '', price: '', details: '', ctaLabel: '', ctaUrl: '', active: true
     },
     {
       id: 'd2c_order_sync',
       name: 'Shopify to Warehouse Auto-Sync Pipeline',
       industry: ['D2C / E-commerce', 'Retail'],
       description: 'Eliminates CSV manual exports by syncing orders, tracking codes, and inventory live across Shopify, Shiprocket, and ERP.',
-      impact: 'Zero manual order processing errors and cuts dispatch prep time by 80%.'
+      impact: 'Zero manual order processing errors and cuts dispatch prep time by 80%.', imageUrl: '', price: '', details: '', ctaLabel: '', ctaUrl: '', active: true
     },
     {
       id: 'd2c_return_ai',
       name: 'AI Return & Exchange Gatekeeper',
       industry: ['D2C / E-commerce', 'Retail'],
       description: 'Validates customer return photos using vision AI, checks return policy conditions, and initiates reverse pickups.',
-      impact: 'Reduces return ticket handling time from 24 hours to 90 seconds.'
+      impact: 'Reduces return ticket handling time from 24 hours to 90 seconds.', imageUrl: '', price: '', details: '', ctaLabel: '', ctaUrl: '', active: true
     },
 
     // Agency / Services / Consulting
@@ -172,21 +180,21 @@ module.exports = {
       name: 'Smart Lead Scoring & Instant Calendar Booking',
       industry: ['Agency / Services', 'SaaS / Tech', 'Consulting'],
       description: 'Greets inbound leads on your site and WhatsApp, scores their budget and requirements, and books qualified calls immediately.',
-      impact: 'Triples speed-to-lead and filters out tire-kickers before your sales calls.'
+      impact: 'Triples speed-to-lead and filters out tire-kickers before your sales calls.', imageUrl: '', price: '', details: '', ctaLabel: '', ctaUrl: '', active: true
     },
     {
       id: 'agency_client_onboard',
       name: 'Autonomous Client Onboarding Hub',
       industry: ['Agency / Services', 'SaaS / Tech'],
       description: 'Generates client Google Drive folders, Slack channels, Notion dashboards, and contracts immediately upon deal closure.',
-      impact: 'Saves 3-4 hours of manual setup per client and creates a seamless first impression.'
+      impact: 'Saves 3-4 hours of manual setup per client and creates a seamless first impression.', imageUrl: '', price: '', details: '', ctaLabel: '', ctaUrl: '', active: true
     },
     {
       id: 'agency_invoice_chaser',
       name: 'Gentle Auto-Invoice & Payment Follower',
       industry: ['Agency / Services', 'Consulting', 'B2B'],
       description: 'Tracks unpaid invoices in your accounting tool and sends polite, scheduled reminders on WhatsApp & Email with payment links.',
-      impact: 'Reduces overdue accounts receivable by 40% without awkward manual follow-ups.'
+      impact: 'Reduces overdue accounts receivable by 40% without awkward manual follow-ups.', imageUrl: '', price: '', details: '', ctaLabel: '', ctaUrl: '', active: true
     },
 
     // Clinic / Healthcare
@@ -195,14 +203,14 @@ module.exports = {
       name: '24/7 Patient Triage & Appointment Bot',
       industry: ['Clinic / Healthcare', 'Medical'],
       description: 'Handles patient appointment booking, rescheduling, and preliminary symptom intake over WhatsApp and web.',
-      impact: 'Eliminates clinic phone congestion and reduces missed appointments by 60% with reminders.'
+      impact: 'Eliminates clinic phone congestion and reduces missed appointments by 60% with reminders.', imageUrl: '', price: '', details: '', ctaLabel: '', ctaUrl: '', active: true
     },
     {
       id: 'clinic_report_dispatcher',
       name: 'Secure Lab Report Auto-Dispatcher',
       industry: ['Clinic / Healthcare', 'Medical'],
       description: 'Securely matches lab results from your diagnostic software and sends PDF reports to patients on WhatsApp with OTP.',
-      impact: 'Cuts front-desk dispatch queries to zero while maintaining strict patient privacy.'
+      impact: 'Cuts front-desk dispatch queries to zero while maintaining strict patient privacy.', imageUrl: '', price: '', details: '', ctaLabel: '', ctaUrl: '', active: true
     },
 
     // Real Estate
@@ -211,14 +219,14 @@ module.exports = {
       name: 'Instant Property Matcher & Tour Scheduler',
       industry: ['Real Estate', 'Brokers'],
       description: 'Captures buyer preferences (budget, location, BHK) and sends matching brochures instantly, booking site visits.',
-      impact: 'Engages home buyers within 10 seconds of lead submission across Meta ads.'
+      impact: 'Engages home buyers within 10 seconds of lead submission across Meta ads.', imageUrl: '', price: '', details: '', ctaLabel: '', ctaUrl: '', active: true
     },
     {
       id: 're_broker_handoff',
       name: 'VIP Lead Escalation to Site Manager',
       industry: ['Real Estate'],
       description: 'Identifies high-intent property investors and rings the site manager on mobile with buyer context in hand.',
-      impact: 'Connects hot buyers with agents while interest is at peak.'
+      impact: 'Connects hot buyers with agents while interest is at peak.', imageUrl: '', price: '', details: '', ctaLabel: '', ctaUrl: '', active: true
     },
 
     // General / Operations / All

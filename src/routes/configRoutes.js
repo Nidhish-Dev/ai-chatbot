@@ -1,7 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const ConfigService = require('../services/configService');
-const { getApiKey, getModel } = require('../ai/openaiService');
+const { getApiKey, getModel, getOpenAIClient } = require('../ai/openaiService');
+const { resolveProductImageUrl } = require('../ai/siteCrawler');
 
 function clientSafeConfig(config) {
   const safe = JSON.parse(JSON.stringify(config));
@@ -59,6 +60,16 @@ router.post('/api/config/openai', async (req, res) => {
 router.post('/api/config/draft', async (req, res) => {
   try {
     const { clientId = 'grapelabs', draft } = req.body;
+    if (Array.isArray(draft?.products)) {
+      draft.products = await Promise.all(draft.products.map(async product => {
+        if (!product.imageUrl) return product;
+        try {
+          return { ...product, imageUrl: await resolveProductImageUrl(product.imageUrl) };
+        } catch (error) {
+          throw new Error(`Could not load the image for “${product.name || 'a product'}”: ${error.message}`);
+        }
+      }));
+    }
     const updated = await ConfigService.updateDraft(clientId, draft);
     res.json({ success: true, config: clientSafeConfig(updated) });
   } catch (err) {
@@ -96,6 +107,30 @@ router.post('/api/config/prompt-ai', async (req, res) => {
 
     const newPrompt = await ConfigService.rewritePromptWithAI(clientId, instruction);
     res.json({ success: true, promptDraft: newPrompt });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// Generate an editable explanation of the configured in-chat nudge policy.
+router.post('/api/config/nudges/preview', async (req, res) => {
+  try {
+    const { clientId = 'grapelabs', nudges, products } = req.body;
+    const config = await ConfigService.getConfig(clientId);
+    const client = getOpenAIClient(config.ai?.apiKey || getApiKey());
+    if (!client) return res.status(400).json({ success: false, error: 'Save an OpenAI API key before generating an AI nudge preview.' });
+    const settings = nudges || config.draft?.nudges || config.nudges || {};
+    const catalog = Array.isArray(products) ? products : config.draft?.products || config.products || [];
+    const response = await client.chat.completions.create({
+      model: config.ai?.model || getModel(),
+      messages: [
+        { role: 'system', content: 'Explain the supplied chatbot nudge configuration to a business operator. Be concrete and honest: describe the visitor message threshold, behavior signals, idle delay in seconds, cooldown, example messages, and cases where no nudge is sent. Clarify that a new visitor message cancels the pending nudge. Do not claim background messages exist. Return valid JSON with shape {"summary":"...","conditions":[{"when":"...","nudge":"..."}],"suppressed":["..."]}. Do not add rules not supported by settings.' },
+        { role: 'user', content: JSON.stringify({ settings, products: catalog.filter(product => product.active !== false).map(({ id, name, description }) => ({ id, name, description })) }) }
+      ],
+      response_format: { type: 'json_object' },
+      temperature: 0.2
+    });
+    res.json({ success: true, preview: JSON.parse(response.choices[0].message.content) });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
   }

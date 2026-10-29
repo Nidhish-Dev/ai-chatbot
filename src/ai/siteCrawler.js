@@ -178,6 +178,23 @@ async function scrapeWebsiteKnowledge(rawUrl) {
   return { url, content, pages: pages.map(({ url: pageUrl, title }) => ({ url: pageUrl, title })) };
 }
 
+/** Resolve a public image URL or a public page URL with social preview metadata. */
+async function resolveProductImageUrl(rawUrl) {
+  const url = await validatePublicUrl(rawUrl);
+  const parsed = new URL(url);
+  const directImage = /\.(?:avif|gif|jpe?g|png|svg|webp)$/i.test(parsed.pathname) ||
+    /(^|\.)images\.unsplash\.com$/i.test(parsed.hostname);
+  if (directImage) return url;
+
+  const html = await fetchHtml(url);
+  const $ = cheerio.load(html);
+  const image = $('meta[property="og:image"]').attr('content') ||
+    $('meta[name="twitter:image"]').attr('content') ||
+    $('link[rel="image_src"]').attr('href');
+  if (!image) throw new Error('This page has no preview image. Paste a direct image URL instead.');
+  return validatePublicUrl(new URL(image, url).href);
+}
+
 /**
  * Crawl website and generate business profile
  */
@@ -292,6 +309,7 @@ function buildFallbackProfileFromDescription(description, businessName = 'Your B
 module.exports = {
   normalizeUrl,
   validatePublicUrl,
+  resolveProductImageUrl,
   scrapeWebsiteKnowledge,
   crawlAndBuildProfile,
   buildFallbackProfileFromDescription

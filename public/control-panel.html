@@ -47,6 +47,31 @@
     .form-control { min-height:40px; padding:10px 12px; border:1px solid #ddd8e3; border-radius:8px; background:#fff; color:var(--text); font-size:13px; font-family:inherit; outline:none; transition:border .15s,box-shadow .15s; }
     .form-control:focus { border-color:#9364b6; box-shadow:0 0 0 3px rgba(86,32,139,.1); }
     textarea.form-control { min-height:120px; resize:vertical; line-height:1.55; }
+    .leads-toolbar { display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:14px; }
+    .leads-toolbar .form-control { max-width:320px; }
+    .leads-table-wrap { width:100%; overflow:auto; border:1px solid var(--border); border-radius:10px; }
+    .leads-table { border-collapse:collapse; min-width:900px; width:100%; font-size:12.5px; }
+    .leads-table th { position:sticky; top:0; z-index:1; background:#f8f6fa; color:#554d5d; text-align:left; font-weight:700; white-space:nowrap; }
+    .leads-table th,.leads-table td { padding:11px 12px; border-bottom:1px solid var(--border); }
+    .leads-table tr:last-child td { border-bottom:0; }
+    .leads-table td { white-space:nowrap; max-width:240px; overflow:hidden; text-overflow:ellipsis; }
+    .leads-table .lead-cell-input { width:180px; min-height:34px; padding:7px 9px; border:1px solid transparent; border-radius:6px; background:transparent; font:inherit; color:var(--text); }
+    .leads-table .lead-cell-input:hover,.leads-table .lead-cell-input:focus { border-color:#ddd8e3; background:#fff; outline:0; }
+    .lead-delete-btn { padding:6px 9px; border:1px solid #f2caca; border-radius:7px; background:#fff; color:#a52f2f; font:inherit; font-weight:650; cursor:pointer; }
+    .lead-delete-btn:hover { background:#fff2f2; border-color:#df9e9e; }
+    .lead-stage { display:inline-block; padding:4px 8px; border-radius:999px; background:var(--purple-soft); color:var(--purple); font-size:11px; font-weight:650; }
+    .leads-empty { padding:30px!important; text-align:center; color:var(--muted); }
+    .catalog-item { border:1px solid var(--border); border-radius:11px; padding:16px; margin:12px 0; background:#fff; }
+    .catalog-item-head { display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:12px; }
+    .nudge-preview { padding:14px; border:1px solid var(--border); border-radius:10px; background:#faf9fc; margin-top:14px; line-height:1.55; }
+    .nudge-examples-title { margin-top:22px; margin-bottom:10px; color:var(--text); font-size:13px; font-weight:700; }
+    .nudge-examples { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px; }
+    .nudge-example-card { position:relative; overflow:hidden; min-height:150px; padding:16px; border:1px solid #e7dcf2; border-radius:14px; background:linear-gradient(145deg,#fff 0%,#faf6ff 100%); box-shadow:0 6px 18px rgba(49,19,76,.05); }
+    .nudge-example-card::after { content:""; position:absolute; width:90px; height:90px; right:-35px; bottom:-45px; border-radius:50%; background:rgba(212,136,10,.12); }
+    .nudge-example-tag { display:inline-block; padding:4px 8px; border-radius:999px; background:#f0e7fa; color:#57218b; font-size:10px; font-weight:700; }
+    .nudge-example-card h3 { margin:12px 0 6px; color:#241333; font-size:13px; }
+    .nudge-example-card p { position:relative; z-index:1; color:#62586b; font-size:12px; line-height:1.5; }
+    @media (max-width:850px) { .nudge-examples { grid-template-columns:1fr; } }
     .status-pill { display:inline-flex; align-items:center; gap:8px; padding:6px 10px; border-radius:999px; font-size:11.5px; font-weight:650; white-space:nowrap; }
     .status-pill::before { content:""; width:7px; height:7px; border-radius:50%; background:currentColor; }
     .status-connected { background:#eaf6ee; color:var(--success); border:1px solid #d0ead8; }
@@ -82,6 +107,7 @@
     <symbol id="i-globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15 15 0 0 1 0 20M12 2a15 15 0 0 0 0 20"/></symbol>
     <symbol id="i-search" viewBox="0 0 24 24"><circle cx="10.8" cy="10.8" r="7.3"/><path d="m16.2 16.2 4.3 4.3M8 10.8h5.6M10.8 8v5.6"/></symbol>
     <symbol id="i-file" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M8 13h8M8 17h8"/></symbol>
+    <symbol id="i-users" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></symbol>
   </svg>
 
   <!-- Sidebar -->
@@ -92,7 +118,10 @@
     </div>
     <ul class="nav-tabs">
       <li class="nav-item active" onclick="switchTab('settings')"><svg class="icon"><use href="#i-settings"></use></svg><span>Settings & AI key</span></li>
+      <li class="nav-item" onclick="switchTab('products')"><svg class="icon"><use href="#i-file"></use></svg><span>Products</span></li>
+      <li class="nav-item" onclick="switchTab('nudges')"><svg class="icon"><use href="#i-sparkles"></use></svg><span>Nudges</span></li>
       <li class="nav-item" onclick="switchTab('knowledge')"><svg class="icon"><use href="#i-book"></use></svg><span>Business data & CAG</span></li>
+      <li class="nav-item" onclick="switchTab('leads')"><svg class="icon"><use href="#i-users"></use></svg><span>Leads</span></li>
       <li class="nav-item" onclick="switchTab('prompt')"><svg class="icon"><use href="#i-sparkles"></use></svg><span>AI prompt</span></li>
     </ul>
   </div>
@@ -216,6 +245,40 @@
         </div>
       </div>
 
+      <!-- Product showcase -->
+      <div class="tab-content" id="tab-products">
+        <div class="card">
+          <div class="card-title"><span><svg class="icon"><use href="#i-file"></use></svg>In-chat product showcase</span><button class="btn btn-primary" onclick="saveProducts()"><svg class="icon"><use href="#i-save"></use></svg>Save to draft</button></div>
+          <p style="font-size:13px;color:#666;margin-bottom:12px">Edit the catalog shown when the AI recommends a product. Images, prices and links appear only when you provide them. The AI uses catalog facts and cannot supply missing prices.</p>
+          <div id="productCatalogEditor"></div>
+          <button class="btn btn-secondary" type="button" onclick="addCatalogProduct()">Add product</button>
+        </div>
+      </div>
+
+      <!-- AI nudges -->
+      <div class="tab-content" id="tab-nudges">
+        <div class="card">
+          <div class="card-title"><span><svg class="icon"><use href="#i-sparkles"></use></svg>AI-powered nudges</span><button class="btn btn-primary" onclick="saveNudgeSettings()"><svg class="icon"><use href="#i-save"></use></svg>Save to draft</button></div>
+          <p style="font-size:13px;color:#666;margin-bottom:14px">The AI checks the current conversation and may show a relevant in-chat next step. It will not send messages later in the background.</p>
+          <div class="form-grid">
+            <label class="form-group"><span class="form-label">Enable AI nudges</span><span><input type="checkbox" id="nudgesEnabled" checked> Allow context-aware suggestions</span></label>
+            <div class="form-group"><label class="form-label" for="nudgeMinExchanges">Start after this many visitor messages</label><input class="form-control" id="nudgeMinExchanges" type="number" min="1" max="20" value="3"></div>
+            <div class="form-group"><label class="form-label" for="nudgeCooldown">Minimum messages between nudges</label><input class="form-control" id="nudgeCooldown" type="number" min="1" max="20" value="3"></div>
+            <div class="form-group"><label class="form-label" for="nudgeDelaySeconds">Wait after the visitor’s last message (seconds)</label><input class="form-control" id="nudgeDelaySeconds" type="number" min="5" max="3600" value="30"></div>
+            <div class="form-group" style="grid-column:1/-1"><label class="form-label" for="nudgeInstruction">Nudge style / AI instruction</label><textarea class="form-control" id="nudgeInstruction" style="min-height:82px">Be helpful and low pressure. Suggest a relevant next step based on what the visitor asked; never repeat a question they already answered.</textarea></div>
+          </div>
+          <div class="nudge-examples-title">Example nudges</div>
+          <div class="nudge-examples">
+            <article class="nudge-example-card"><span class="nudge-example-tag">Product interest</span><h3>Help them choose</h3><p>“Would you like a quick comparison of these options, or should I recommend the best fit?”</p></article>
+            <article class="nudge-example-card"><span class="nudge-example-tag">Unanswered question</span><h3>Offer a useful next step</h3><p>“I can also explain how the setup works for a team like yours.”</p></article>
+            <article class="nudge-example-card"><span class="nudge-example-tag">Booking intent</span><h3>Make booking easy</h3><p>“Would you like me to share the booking link so you can pick a time?”</p></article>
+          </div>
+          <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:14px"><button class="btn btn-secondary" onclick="previewNudgePolicy()"><svg class="icon"><use href="#i-sparkles"></use></svg>Generate AI nudge plan</button><span id="nudgePreviewStatus" style="font-size:12px;color:#666"></span></div>
+          <div id="nudgePreview" class="nudge-preview" style="display:none"></div>
+          <p style="font-size:12px;color:#666;margin-top:12px">A nudge is prepared after the visitor message threshold, shown only after the configured idle delay, and suppressed until the cooldown passes. A new message resets the idle timer. Closing the chat uses the same delay before showing the nudge teaser.</p>
+        </div>
+      </div>
+
       <!-- TAB 2: Business Data & CAG -->
       <div class="tab-content" id="tab-knowledge">
         <div class="card">
@@ -240,12 +303,12 @@
           <div class="card-title">Generate FAQs from a document</div>
           <div class="upload-drop-zone" id="knowledgeDropZone" role="button" tabindex="0" onclick="document.getElementById('knowledgeFile').click()">
             <strong>Drop a PDF, DOC, or DOCX here</strong>
-            <p style="font-size:13px; margin:8px 0 12px;">ChatGPT will draft question and answer pairs from its contents (10 MB max).</p>
+            <p style="font-size:13px; margin:8px 0 12px;">ChatGPT will draft FAQs and extract the product catalog described in the document (10 MB max).</p>
             <input type="file" id="knowledgeFile" accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" hidden>
             <button type="button" class="btn btn-secondary" onclick="event.stopPropagation(); document.getElementById('knowledgeFile').click()">Choose document</button>
             <div id="knowledgeUploadStatus" role="status" style="margin-top:12px; font-size:13px;"></div>
           </div>
-          <p style="font-size:12px; color:#666; margin-top:12px;">Generated FAQs are saved to Firebase Draft. Review them below, then publish to make the bot use them.</p>
+          <p style="font-size:12px; color:#666; margin-top:12px;">Generated FAQs and extracted products are saved to Draft. Embedded DOCX images, supported PDF JPEG images, and image URLs are matched to products when possible. Review the catalog, then publish to make changes live.</p>
         </div>
 
         <div class="card">
@@ -265,6 +328,29 @@
           </div>
           <p style="font-size:13px; color:#666; margin-bottom:16px;">The bot strictly answers from these FAQs, preventing hallucinations.</p>
           <div id="faqList" style="display:flex; flex-direction:column; gap:12px;"></div>
+        </div>
+      </div>
+
+      <!-- TAB: Leads & contact capture -->
+      <div class="tab-content" id="tab-leads">
+        <div class="card">
+          <div class="card-title">
+            <span><svg class="icon"><use href="#i-users"></use></svg>Conversation leads</span>
+            <span id="leadsCount" class="status-pill status-connected">0 records</span>
+          </div>
+          <p style="font-size:13px;color:#666;margin-bottom:15px;">Contact details shared during conversations appear here. Edit cells directly; changes save to Firebase as you leave a cell.</p>
+          <div class="leads-toolbar">
+            <input class="form-control" id="leadsSearch" type="search" placeholder="Search name, email, phone or company" oninput="filterLeads()">
+            <button class="btn btn-secondary" type="button" onclick="loadLeads()"><svg class="icon"><use href="#i-search"></use></svg>Refresh</button>
+            <button class="btn btn-primary" type="button" onclick="addLeadColumn()"><svg class="icon"><use href="#i-save"></use></svg>Add column</button>
+            <span id="leadsStatus" role="status" style="font-size:12px;color:#666;"></span>
+          </div>
+          <div class="leads-table-wrap">
+            <table class="leads-table" aria-label="Conversation leads">
+              <thead id="leadsHead"></thead>
+              <tbody id="leadsBody"><tr><td class="leads-empty">Select Leads to load your conversation records.</td></tr></tbody>
+            </table>
+          </div>
         </div>
       </div>
 
@@ -299,6 +385,8 @@
     const API_BASE = (document.querySelector('meta[name="api-base-url"]')?.content || window.location.origin).replace(/\/$/, '');
     let currentConfig = null;
     let currentOpenAiStatus = {};
+    let leadRecords = [];
+    let leadColumns = [];
     if (['localhost', '127.0.0.1'].includes(window.location.hostname)) {
       document.getElementById('localDemoLink').style.display = 'inline-flex';
     }
@@ -314,6 +402,7 @@
       if (targetTab) targetTab.classList.add('active');
 
       document.getElementById('pageTitle').innerText = targetNav ? targetNav.innerText : 'Control Panel';
+      if (tabId === 'leads') loadLeads();
     }
 
     async function loadConfig() {
@@ -329,6 +418,129 @@
         console.error('Error loading config:', e);
       }
     }
+
+    function escapeLeadCell(value) {
+      return String(value ?? '').replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]));
+    }
+
+    async function loadLeads() {
+      const status = document.getElementById('leadsStatus');
+      status.textContent = 'Loading…';
+      try {
+        const response = await fetch(`${API_BASE}/api/leads?clientId=grapelabs`);
+        const data = await response.json();
+        if (!data.success) throw new Error(data.error || 'Could not load leads.');
+        leadRecords = data.leads || [];
+        leadColumns = data.columns || [];
+        document.getElementById('leadsCount').textContent = `${leadRecords.length} records`;
+        renderLeads();
+        status.textContent = '';
+      } catch (error) {
+        status.textContent = error.message;
+        document.getElementById('leadsBody').innerHTML = `<tr><td class="leads-empty">${escapeLeadCell(error.message)}</td></tr>`;
+      }
+    }
+
+    function filterLeads() { renderLeads(); }
+
+    function renderLeads() {
+      const fixedColumns = [
+        ['Name', lead => lead.fields?.name], ['Email', lead => lead.identifiers?.email],
+        ['Phone', lead => lead.identifiers?.phone], ['Company', lead => lead.fields?.company],
+        ['Website', lead => lead.fields?.website],
+        ['Channel', lead => lead.channelsUsed?.join(', ') || lead.firstChannel],
+        ['Stage', lead => lead.stage], ['Score', lead => lead.score]
+      ];
+      document.getElementById('leadsHead').innerHTML = `<tr>${fixedColumns.map(([label]) => `<th>${label}</th>`).join('')}${leadColumns.map(column => `<th>${escapeLeadCell(column.label)}</th>`).join('')}<th>Actions</th></tr>`;
+      const query = document.getElementById('leadsSearch').value.trim().toLowerCase();
+      const filtered = leadRecords.filter(lead => !query || JSON.stringify(lead).toLowerCase().includes(query));
+      if (!filtered.length) {
+        document.getElementById('leadsBody').innerHTML = `<tr><td class="leads-empty" colspan="${fixedColumns.length + leadColumns.length + 1}">${leadRecords.length ? 'No matching leads.' : 'No conversation records yet. Leads will appear here when visitors chat.'}</td></tr>`;
+        return;
+      }
+      document.getElementById('leadsBody').innerHTML = filtered.map(lead => {
+        const baseCells = [
+          escapeLeadCell(lead.fields?.name || '—'), escapeLeadCell(lead.identifiers?.email || '—'),
+          escapeLeadCell(lead.identifiers?.phone || '—'), escapeLeadCell(lead.fields?.company || '—'),
+          escapeLeadCell(lead.fields?.website || '—'),
+          escapeLeadCell(lead.channelsUsed?.join(', ') || lead.firstChannel || '—'),
+          `<span class="lead-stage">${escapeLeadCell(lead.stage || 'Anonymous')}</span>`,
+          escapeLeadCell(lead.score ?? 0)
+        ].map(value => `<td>${value}</td>`).join('');
+        const editableCells = leadColumns.map(column => {
+          const value = column.id === 'remarks' ? lead.fields?.notes : lead.customFields?.[column.id];
+          return `<td><input class="lead-cell-input" type="text" maxlength="2000" data-person-id="${escapeLeadCell(lead.id)}" data-column-id="${escapeLeadCell(column.id)}" value="${escapeLeadCell(value || '')}" aria-label="${escapeLeadCell(column.label)} for ${escapeLeadCell(lead.fields?.name || lead.id)}"></td>`;
+        }).join('');
+        const deleteCell = `<td><button class="lead-delete-btn" type="button" data-delete-person-id="${escapeLeadCell(lead.id)}" aria-label="Delete lead ${escapeLeadCell(lead.fields?.name || lead.id)}">Delete</button></td>`;
+        return `<tr>${baseCells}${editableCells}${deleteCell}</tr>`;
+      }).join('');
+    }
+
+    document.getElementById('leadsBody').addEventListener('click', async event => {
+      const button = event.target.closest('[data-delete-person-id]');
+      if (!button) return;
+      const lead = leadRecords.find(item => item.id === button.dataset.deletePersonId);
+      const label = lead?.fields?.name || lead?.identifiers?.email || lead?.identifiers?.phone || 'this lead';
+      if (!confirm(`Delete ${label} and its conversation history? This cannot be undone.`)) return;
+      button.disabled = true;
+      const status = document.getElementById('leadsStatus');
+      status.textContent = 'Deleting lead…';
+      try {
+        const response = await fetch(`${API_BASE}/api/leads/${encodeURIComponent(button.dataset.deletePersonId)}?clientId=grapelabs`, { method: 'DELETE' });
+        const data = await response.json();
+        if (!response.ok || !data.success) throw new Error(data.error || 'Could not delete this lead.');
+        leadRecords = leadRecords.filter(item => item.id !== button.dataset.deletePersonId);
+        document.getElementById('leadsCount').textContent = `${leadRecords.length} records`;
+        renderLeads();
+        status.textContent = 'Lead and conversation history deleted.';
+        setTimeout(() => { if (status.textContent === 'Lead and conversation history deleted.') status.textContent = ''; }, 2500);
+      } catch (error) {
+        status.textContent = error.message;
+        button.disabled = false;
+      }
+    });
+
+    async function addLeadColumn() {
+      const label = prompt('Name for the new lead column (for example, Remarks):');
+      if (!label || !label.trim()) return;
+      const status = document.getElementById('leadsStatus');
+      status.textContent = 'Adding column…';
+      try {
+        const response = await fetch(`${API_BASE}/api/leads/columns`, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ clientId: 'grapelabs', label: label.trim() })
+        });
+        const data = await response.json();
+        if (!data.success) throw new Error(data.error || 'Could not add the column.');
+        leadColumns = data.columns || [];
+        renderLeads();
+        status.textContent = 'Column added.';
+        setTimeout(() => { if (status.textContent === 'Column added.') status.textContent = ''; }, 2200);
+      } catch (error) { status.textContent = error.message; }
+    }
+
+    document.getElementById('leadsBody').addEventListener('change', async event => {
+      const input = event.target.closest('.lead-cell-input');
+      if (!input) return;
+      input.disabled = true;
+      const status = document.getElementById('leadsStatus');
+      status.textContent = 'Saving…';
+      try {
+        const response = await fetch(`${API_BASE}/api/leads/${encodeURIComponent(input.dataset.personId)}`, {
+          method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ clientId: 'grapelabs', columnId: input.dataset.columnId, value: input.value })
+        });
+        const data = await response.json();
+        if (!data.success) throw new Error(data.error || 'Could not save this value.');
+        const record = leadRecords.find(lead => lead.id === input.dataset.personId);
+        const column = leadColumns.find(item => item.id === input.dataset.columnId);
+        if (record && column?.id === 'remarks') record.fields.notes = input.value;
+        else if (record) record.customFields = { ...(record.customFields || {}), [input.dataset.columnId]: input.value };
+        status.textContent = 'Saved to Firebase.';
+        setTimeout(() => { if (status.textContent === 'Saved to Firebase.') status.textContent = ''; }, 1800);
+      } catch (error) { status.textContent = error.message; }
+      finally { input.disabled = false; }
+    });
 
     function populateUI(cfg, openAiData = {}) {
       // OpenAI Data
@@ -369,6 +581,14 @@
       document.getElementById('teaserDelay').value = cfg.teaser?.delaySeconds || 15;
       document.getElementById('scrollTrigger').value = cfg.teaser?.scrollThresholdPercent || 50;
       document.getElementById('teaserText').value = cfg.teaser?.text || '';
+      const productSource = cfg.draft?.products || cfg.products || [];
+      renderProductEditor(productSource);
+      const nudgeSettings = cfg.draft?.nudges || cfg.nudges || {};
+      document.getElementById('nudgesEnabled').checked = nudgeSettings.enabled !== false;
+      document.getElementById('nudgeMinExchanges').value = nudgeSettings.minExchanges || 3;
+      document.getElementById('nudgeCooldown').value = nudgeSettings.cooldownExchanges || 3;
+      document.getElementById('nudgeDelaySeconds').value = nudgeSettings.delaySeconds || 30;
+      document.getElementById('nudgeInstruction').value = nudgeSettings.instruction || '';
 
 
       document.getElementById('killSwitchOverall').checked = !!cfg.active;
@@ -543,7 +763,9 @@
         currentConfig = result.config;
         populateUI(currentConfig, currentOpenAiStatus);
         const companyLabel = result.companyName ? ` for ${result.companyName}` : '';
-        status.innerText = `Generated ${result.generatedCount} FAQs${companyLabel} from ${file.name}. The draft now has ${result.totalFaqCount} FAQs total. Review them below, then publish.`;
+        const productCount = result.generatedProductCount || 0;
+        const imageNotice = result.imageUploadFailures ? ` ${result.imageUploadFailures} extracted image(s) could not be saved to Firebase Storage; check the server log and storage bucket permissions.` : '';
+        status.innerText = `Generated ${result.generatedCount} FAQs and extracted ${productCount} products${companyLabel} from ${file.name}. The new CAG replaced the previous FAQ draft; it now has ${result.totalFaqCount} FAQs. Review the product catalog in Products & nudges, then publish.${imageNotice}`;
       } catch (err) {
         status.innerText = err.message;
       } finally {
@@ -589,6 +811,102 @@
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ clientId: 'grapelabs', channel, enabled })
       });
+    }
+
+    let editableProducts = [];
+    function renderProductEditor(products) {
+      editableProducts = (products || []).map((product, index) => ({
+        id: product.id || `product_${index + 1}`, name: product.name || '', industry: product.industry || '',
+        description: product.description || '', impact: product.impact || '', imageUrl: product.imageUrl || '',
+        price: product.price || '', details: product.details || '', ctaLabel: product.ctaLabel || '',
+        ctaUrl: product.ctaUrl || '', active: product.active !== false
+      }));
+      const container = document.getElementById('productCatalogEditor');
+      container.innerHTML = editableProducts.map((p, i) => `<section class="catalog-item" data-product-index="${i}">
+        <div class="catalog-item-head"><strong>${escapeLeadCell(p.name || `Product ${i + 1}`)}</strong><div style="display:flex;align-items:center;gap:14px"><label class="form-label"><input data-field="active" type="checkbox" ${p.active ? 'checked' : ''}> Show in recommendations</label><button class="lead-delete-btn" type="button" onclick="deleteCatalogProduct(${i})">Delete</button></div></div>
+        <div class="form-grid">
+          ${productField('Name', 'name', p.name, i)} ${productField('Price (optional)', 'price', p.price, i)}
+          <label class="form-group"><span class="form-label">Image URL (optional)</span><input class="form-control" data-field="imageUrl" data-index="${i}" value="${escapeLeadCell(p.imageUrl)}" placeholder="Paste a direct image URL or image page URL"><img data-image-preview="${i}" src="${escapeLeadCell(p.imageUrl)}" alt="${escapeLeadCell(p.name || 'Product image')}" style="${p.imageUrl ? '' : 'display:none;'}max-width:160px;max-height:100px;object-fit:cover;margin-top:8px;border-radius:8px"><small data-image-status="${i}" style="font-size:11px;color:#777">${p.imageUrl ? '' : 'Page links such as Unsplash are converted to their preview image when you save.'}</small></label> ${productField('Industries', 'industry', Array.isArray(p.industry) ? p.industry.join(', ') : p.industry, i)}
+          ${productField('Description', 'description', p.description, i)} ${productField('Key details', 'details', p.details, i)}
+          ${productField('Impact', 'impact', p.impact, i)} ${productField('Button label', 'ctaLabel', p.ctaLabel, i)}
+          ${productField('Button URL', 'ctaUrl', p.ctaUrl, i)}
+        </div></section>`).join('');
+      container.querySelectorAll('[data-product-index] input').forEach(input => input.addEventListener('input', () => {
+        const item = editableProducts[Number(input.closest('[data-product-index]').dataset.productIndex)];
+        item[input.dataset.field] = input.type === 'checkbox' ? input.checked : input.value;
+      }));
+      container.querySelectorAll('input[data-field="imageUrl"]').forEach(input => {
+        const index = Number(input.dataset.index);
+        const preview = container.querySelector(`[data-image-preview="${index}"]`);
+        const status = container.querySelector(`[data-image-status="${index}"]`);
+        input.addEventListener('input', () => {
+          preview.src = input.value.trim();
+          preview.style.display = input.value.trim() ? 'block' : 'none';
+          status.textContent = '';
+        });
+        preview.addEventListener('error', () => {
+          preview.style.display = 'none';
+          status.textContent = 'Image preview unavailable. Save to resolve a page link, or use a public direct image URL.';
+          status.style.color = '#a52f2f';
+        });
+        preview.addEventListener('load', () => {
+          status.textContent = 'Image preview loaded.';
+          status.style.color = '#22834a';
+        });
+      });
+    }
+    function productField(label, field, value, index) {
+      return `<label class="form-group"><span class="form-label">${label}</span><input class="form-control" data-field="${field}" data-index="${index}" value="${escapeLeadCell(value)}"></label>`;
+    }
+    function addCatalogProduct() {
+      editableProducts.push({ id: `product_${Date.now()}`, name: '', industry: '', description: '', impact: '', imageUrl: '', price: '', details: '', ctaLabel: '', ctaUrl: '', active: true });
+      renderProductEditor(editableProducts);
+    }
+    function deleteCatalogProduct(index) {
+      const product = editableProducts[index];
+      if (!product || !confirm(`Delete ${product.name || 'this product'} from the draft catalog?`)) return;
+      editableProducts.splice(index, 1);
+      renderProductEditor(editableProducts);
+    }
+    function collectNudgeSettings() {
+      return {
+        enabled: document.getElementById('nudgesEnabled').checked,
+        minExchanges: Math.max(1, Math.min(20, Number(document.getElementById('nudgeMinExchanges').value) || 3)),
+        cooldownExchanges: Math.max(1, Math.min(20, Number(document.getElementById('nudgeCooldown').value) || 3)),
+        delaySeconds: Math.max(5, Math.min(3600, Number(document.getElementById('nudgeDelaySeconds').value) || 30)),
+        instruction: document.getElementById('nudgeInstruction').value.trim()
+      };
+    }
+    async function saveProducts() {
+      const products = editableProducts.map(p => ({ ...p, industry: String(p.industry || '').split(',').map(s => s.trim()).filter(Boolean) }));
+      if (products.some(p => !p.id || !p.name || !p.description)) return alert('Each product needs an ID, name, and description.');
+      const response = await fetch(`${API_BASE}/api/config/draft`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ clientId: 'grapelabs', draft: { products } }) });
+      const data = await response.json();
+      if (!response.ok || !data.success) return alert(data.error || 'Could not save products.');
+      currentConfig = data.config;
+      renderProductEditor(data.config?.draft?.products || products);
+      alert('Products saved to Draft. Publish changes when ready.');
+    }
+    async function saveNudgeSettings() {
+      const response = await fetch(`${API_BASE}/api/config/draft`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ clientId: 'grapelabs', draft: { nudges: collectNudgeSettings() } }) });
+      const data = await response.json();
+      if (!response.ok || !data.success) return alert(data.error || 'Could not save nudge settings.');
+      currentConfig = data.config;
+      alert('Nudge settings saved to Draft. Publish changes when ready.');
+    }
+    async function previewNudgePolicy() {
+      const status = document.getElementById('nudgePreviewStatus');
+      const output = document.getElementById('nudgePreview');
+      status.textContent = 'Generating plan with AI…';
+      try {
+        const response = await fetch(`${API_BASE}/api/config/nudges/preview`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ clientId: 'grapelabs', nudges: collectNudgeSettings(), products: editableProducts }) });
+        const data = await response.json();
+        if (!response.ok || !data.success) throw new Error(data.error || 'Could not generate plan.');
+        const preview = data.preview;
+        output.innerHTML = `<strong>${escapeLeadCell(preview.summary || 'Nudge behavior')}</strong>${(preview.conditions || []).map(row => `<p style="margin-top:10px"><b>When:</b> ${escapeLeadCell(row.when)}<br><b>Example:</b> ${escapeLeadCell(row.nudge)}</p>`).join('')}<p style="margin-top:10px"><b>No nudge:</b> ${(preview.suppressed || []).map(escapeLeadCell).join(' · ')}</p>`;
+        output.style.display = 'block';
+        status.textContent = 'AI-generated from these settings. Save settings to Draft to keep changes.';
+      } catch (error) { status.textContent = error.message; }
     }
 
     async function publishDraft() {

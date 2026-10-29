@@ -53,6 +53,7 @@ class WebAdapter {
           reply: result.reply,
           buttons: result.buttons,
           cards: result.cards,
+          nudge: result.nudge || null,
           intent: result.intent,
           person: result.person
         })}\n\n`);

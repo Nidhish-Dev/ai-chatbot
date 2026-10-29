@@ -83,8 +83,17 @@ class EventService {
     const phone = person.identifiers?.phone || payload.phone || 'N/A';
     const industry = fields.industry || 'Not specified';
     const score = person.score || payload.score || 0;
+    const safe = value => String(value || 'N/A').replace(/[&<>]/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[char]));
 
     switch (eventName) {
+      case 'lead_contact_captured':
+        return `🆕 <b>New contact captured</b>\n\n` +
+          `👤 <b>Name:</b> ${safe(name)}\n` +
+          `📧 <b>Email:</b> ${safe(email)}\n` +
+          `📱 <b>Phone:</b> ${safe(phone)}\n` +
+          `🔗 <b>Channel:</b> ${safe(payload.channel || person.channelsUsed?.[0] || 'web')}\n` +
+          `🆔 <code>${safe(personId)}</code>`;
+
       case 'lead_hot':
         return `🔥 <b>HOT LEAD ALERT (Score: ${score}/100)</b>\n\n` +
           `👤 <b>Name:</b> ${name}\n` +

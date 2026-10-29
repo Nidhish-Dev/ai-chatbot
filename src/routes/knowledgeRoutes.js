@@ -3,6 +3,7 @@ const router = express.Router();
 const ConfigService = require('../services/configService');
 const { generateFaqsFromFile } = require('../ai/openaiService');
 const { scrapeWebsiteKnowledge } = require('../ai/siteCrawler');
+const { uploadPublicProductImage } = require('../db/firebase');
 
 const MAX_FILE_BYTES = 10 * 1024 * 1024;
 const ACCEPTED_TYPES = {
@@ -72,35 +73,52 @@ router.post('/api/knowledge/generate-faqs', async (req, res) => {
     const config = await ConfigService.getConfig(clientId);
     const documentResult = await generateFaqsFromFile({ fileName: fileName.slice(0, 160), mimeType, base64, config });
     const generated = documentResult.faqs;
-    const companyName = documentResult.companyName;
-    if (!generated.length) throw new Error('No question and answer pairs could be generated from this document.');
-
-    const previousFaqs = config.draft?.faqs || config.faqs || [];
-    // Re-uploading the same source replaces its earlier generated answers instead
-    // of accumulating duplicates alongside the new generation.
-    const mergedFaqs = previousFaqs.filter(faq => faq.source !== fileName);
-    const seenQuestions = new Set(mergedFaqs.map(faq => faq.question.trim().toLowerCase()));
-    for (const faq of generated) {
-      const key = faq.question.toLowerCase();
-      if (!seenQuestions.has(key)) {
-        mergedFaqs.push(faq);
-        seenQuestions.add(key);
+    const generatedProducts = documentResult.products || [];
+    const imageUrls = new Map();
+    let imageUploadFailures = 0;
+    const productsWithImages = await Promise.all(generatedProducts.map(async product => {
+      if (!product.imageIndex || product.imageUrl) return product;
+      const image = documentResult.imageAssets?.[product.imageIndex - 1];
+      if (!image) return product;
+      try {
+        if (!imageUrls.has(product.imageIndex)) {
+          imageUrls.set(product.imageIndex, await uploadPublicProductImage(clientId, image));
+        }
+        const imageUrl = imageUrls.get(product.imageIndex) || '';
+        if (!imageUrl) imageUploadFailures++;
+        return { ...product, imageUrl };
+      } catch (error) {
+        imageUploadFailures++;
+        console.warn(`Could not publish an extracted product image: ${error.message}`);
+        return product;
       }
-    }
+    }));
+    const companyName = documentResult.companyName;
+    if (!generated.length && !generatedProducts.length) throw new Error('No FAQs or product information could be extracted from this document.');
+
+    // Each CAG upload is the new FAQ source of truth: replace the prior FAQ set
+    // so stale questions and answers cannot survive a document update.
+    const replacementFaqs = generated;
     const previousDocuments = config.draft?.knowledgeDocuments || config.knowledgeDocuments || [];
     const knowledgeDocuments = [...new Set([...previousDocuments, fileName.slice(0, 160)])];
     const draft = {
-      faqs: mergedFaqs,
+      faqs: replacementFaqs,
       knowledgeDocuments,
-      changeNote: `Generated ${generated.length} FAQs from ${fileName.slice(0, 120)}`
+      changeNote: `Extracted ${generated.length} FAQs and ${generatedProducts.length} products from ${fileName.slice(0, 120)}`
     };
+    // A product catalog generated from a CAG document becomes the draft catalog;
+    // this prevents unrelated starter catalog entries from being recommended.
+    if (productsWithImages.length) draft.products = productsWithImages;
     if (companyName) draft.cagCompanyName = companyName;
     const updated = await ConfigService.updateDraft(clientId, draft);
 
     res.json({
       success: true,
       generatedCount: generated.length,
-      totalFaqCount: mergedFaqs.length,
+      generatedProductCount: generatedProducts.length,
+      imageUploadFailures,
+      totalFaqCount: replacementFaqs.length,
+      products: productsWithImages,
       companyName,
       faqs: generated,
       config: clientSafeConfig(updated)

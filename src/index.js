@@ -12,6 +12,7 @@ const tryitRoutes = require('./routes/tryitRoutes');
 const eventRoutes = require('./routes/eventRoutes');
 const configRoutes = require('./routes/configRoutes');
 const knowledgeRoutes = require('./routes/knowledgeRoutes');
+const leadRoutes = require('./routes/leadRoutes');
 
 const app = express();
 const controlPanelPath = path.resolve(__dirname, '../public/control-panel.html');
@@ -67,6 +68,7 @@ app.use('/', tryitRoutes);
 app.use('/', eventRoutes);
 app.use('/', configRoutes);
 app.use('/', knowledgeRoutes);
+app.use('/', leadRoutes);
 
 // Error Handling Middleware
 app.use((err, req, res, next) => {

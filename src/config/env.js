@@ -2,6 +2,16 @@ const dotenv = require('dotenv');
 const path = require('path');
 dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 
+function normalizePrivateKey(value) {
+  return value
+    // dotenv turns \"\\\\n\" sequences into a backslash plus a real newline.
+    .replace(/\\\r?\n/g, '\n')
+    // Also accept the common literal \\n representation from deployment dashboards.
+    .replace(/\\n/g, '\n')
+    .replace(/\r\n/g, '\n')
+    .trim();
+}
+
 module.exports = {
   PORT: process.env.PORT || 3000,
   NODE_ENV: process.env.NODE_ENV || 'development',
@@ -12,10 +22,9 @@ module.exports = {
   
   // Firebase Admin SDK
   FIREBASE_PROJECT_ID: process.env.FIREBASE_PROJECT_ID || 'aichatbot-9bbc3',
+  FIREBASE_STORAGE_BUCKET: process.env.FIREBASE_STORAGE_BUCKET || '',
   FIREBASE_CLIENT_EMAIL: process.env.FIREBASE_CLIENT_EMAIL || '',
-  FIREBASE_PRIVATE_KEY: process.env.FIREBASE_PRIVATE_KEY
-    ? process.env.FIREBASE_PRIVATE_KEY.replace(/\\\\n/g, '\n').replace(/\\n/g, '\n')
-    : '',
+  FIREBASE_PRIVATE_KEY: process.env.FIREBASE_PRIVATE_KEY ? normalizePrivateKey(process.env.FIREBASE_PRIVATE_KEY) : '',
 
   // n8n calls the chat API with this shared secret. Channel credentials belong in n8n.
   N8N_API_KEY: process.env.N8N_API_KEY || '',

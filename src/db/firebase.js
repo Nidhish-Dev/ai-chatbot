@@ -1,5 +1,7 @@
 const { initializeApp, cert } = require('firebase-admin/app');
 const { getFirestore } = require('firebase-admin/firestore');
+const { getStorage } = require('firebase-admin/storage');
+const { randomUUID } = require('node:crypto');
 const fs = require('fs');
 const path = require('path');
 const env = require('../config/env');
@@ -247,7 +249,8 @@ function initFirebase() {
           clientEmail: env.FIREBASE_CLIENT_EMAIL,
           privateKey: env.FIREBASE_PRIVATE_KEY
         }),
-        projectId: env.FIREBASE_PROJECT_ID
+        projectId: env.FIREBASE_PROJECT_ID,
+        ...(env.FIREBASE_STORAGE_BUCKET ? { storageBucket: env.FIREBASE_STORAGE_BUCKET } : {})
       });
       dbInstance = getFirestore(app);
       isRealFirebase = true;
@@ -271,7 +274,31 @@ function initFirebase() {
   return dbInstance;
 }
 
+async function uploadPublicProductImage(clientId, image) {
+  if (!image?.buffer || !image?.contentType) return '';
+  if (!isRealFirebase) {
+    return `data:${image.contentType};base64,${image.buffer.toString('base64')}`;
+  }
+  initFirebase();
+  const bucket = getStorage().bucket(env.FIREBASE_STORAGE_BUCKET || undefined);
+  const safeClientId = String(clientId || 'grapelabs').replace(/[^a-zA-Z0-9_-]/g, '_');
+  const extension = image.extension === 'jpeg' ? 'jpg' : image.extension;
+  const objectPath = `product-images/${safeClientId}/${randomUUID()}.${extension}`;
+  const token = randomUUID();
+  const file = bucket.file(objectPath);
+  await file.save(image.buffer, {
+    resumable: false,
+    metadata: {
+      contentType: image.contentType,
+      cacheControl: 'public, max-age=31536000',
+      metadata: { firebaseStorageDownloadTokens: token }
+    }
+  });
+  return `https://firebasestorage.googleapis.com/v0/b/${bucket.name}/o/${encodeURIComponent(objectPath)}?alt=media&token=${token}`;
+}
+
 module.exports = {
   getDb: initFirebase,
-  isRealFirebase: () => isRealFirebase
+  isRealFirebase: () => isRealFirebase,
+  uploadPublicProductImage
 };

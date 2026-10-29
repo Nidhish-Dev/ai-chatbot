@@ -1,4 +1,5 @@
 const OpenAI = require('openai');
+const { inflateRawSync } = require('node:zlib');
 const env = require('../config/env');
 
 // The active API key is read from the Firebase-backed client config.
@@ -308,6 +309,7 @@ async function callAI({ messages, systemPrompt, config = {}, personContext = {} 
         reply: parsed.reply || "I'm here to help you automate your business operations.",
         buttons: Array.isArray(parsed.buttons) ? parsed.buttons.slice(0, 3) : [],
         cards: Array.isArray(parsed.cards) ? parsed.cards.slice(0, 3) : [],
+        nudge: parsed.nudge && typeof parsed.nudge.message === 'string' ? { message: parsed.nudge.message.slice(0, 300), label: String(parsed.nudge.label || '').slice(0, 48) } : null,
         intent: parsed.intent || 'faq',
         extracted: parsed.extracted || {},
         score_signals: Array.isArray(parsed.score_signals) ? parsed.score_signals : []
@@ -324,21 +326,31 @@ async function callAI({ messages, systemPrompt, config = {}, personContext = {} 
 async function generateFaqsFromFile({ fileName, mimeType, base64, config = {} }) {
   const client = getOpenAIClient(config.ai?.apiKey || currentApiKey);
   if (!client) throw new Error('Add and save an OpenAI API key before generating FAQs.');
+  const rawDocument = Buffer.from(base64, 'base64');
+  const imageAssets = mimeType === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+    ? extractDocxImages(rawDocument)
+    : mimeType === 'application/pdf' ? extractPdfJpegImages(rawDocument) : [];
+  const imageContent = imageAssets.flatMap((image, index) => [
+    { type: 'input_text', text: `Product document image ${index + 1} (${image.extension})` },
+    { type: 'input_image', image_url: `data:${image.contentType};base64,${image.buffer.toString('base64')}` }
+  ]);
   const response = await client.responses.create({
     model: config.ai?.model || currentModel || 'gpt-4o-mini',
     instructions: [
-      'Read the attached business knowledge document and create a comprehensive FAQ list that covers every distinct question a customer could reasonably ask about the facts in it.',
+      'Read the attached business knowledge document and create a comprehensive FAQ list plus a product catalog from products explicitly described in the document.',
+      'For every distinct product/service offering explicitly presented as something the business sells or provides, extract its name, concise description, price exactly as written (or empty string), relevant details/features, impact/benefit, and image URL only if an actual URL is stated in the document (otherwise empty string). If separate product images are attached after the document, match an image to a product only when the visual match is clear and return its 1-based imageIndex; otherwise use null. Do not turn generic examples or third-party brands into products.',
       'Also extract the primary company or organization name explicitly stated in the document. If no name is clearly stated, return an empty companyName string. Do not infer a name from the uploaded filename.',
       'Use only facts explicitly supported by the document. Do not invent, assume, or fill gaps with general knowledge.',
       'When the document does not establish an answer, do not create an FAQ for it.',
-      'Return valid JSON only with this shape: {"companyName":"...","faqs":[{"id":"short_snake_case_id","question":"...","answer":"..."}]}.',
-      'Write clear, concise answers. Create as many distinct FAQs as the document supports, up to 80. Do not include prices unless the document explicitly contains them.'
+      'Return valid JSON only with this shape: {"companyName":"...","faqs":[{"id":"short_snake_case_id","question":"...","answer":"..."}],"products":[{"id":"short_snake_case_id","name":"...","description":"...","price":"...","details":"...","impact":"...","imageUrl":"","imageIndex":null}]}.',
+      'Write clear, concise answers. Create as many distinct FAQs and products as the document supports, up to 80 of each. Never invent pricing, image URLs, features, or product names. If the document contains no products, return an empty products array.'
     ].join(' '),
     input: [{
       role: 'user',
       content: [
         { type: 'input_text', text: `Generate FAQs from this document: ${fileName}. Return the result as JSON.` },
-        { type: 'input_file', filename: fileName, file_data: `data:${mimeType};base64,${base64}` }
+        { type: 'input_file', filename: fileName, file_data: `data:${mimeType};base64,${base64}` },
+        ...imageContent
       ]
     }],
     text: { format: { type: 'json_object' } },
@@ -346,6 +358,7 @@ async function generateFaqsFromFile({ fileName, mimeType, base64, config = {} })
   });
   const parsed = JSON.parse(response.output_text || '{}');
   const faqs = Array.isArray(parsed.faqs) ? parsed.faqs : [];
+  const products = Array.isArray(parsed.products) ? parsed.products : [];
   return {
     companyName: typeof parsed.companyName === 'string' ? parsed.companyName.trim().slice(0, 120) : '',
     faqs: faqs
@@ -356,8 +369,93 @@ async function generateFaqsFromFile({ fileName, mimeType, base64, config = {} })
       question: faq.question.trim().slice(0, 500),
       answer: faq.answer.trim().slice(0, 4000),
       source: fileName
-    }))
+    })),
+    products: products
+      .filter(product => product && typeof product.name === 'string' && product.name.trim() && typeof product.description === 'string' && product.description.trim())
+      .slice(0, 80)
+      .map((product, index) => ({
+        id: String(product.id || product.name || `uploaded_product_${index + 1}`).toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '').slice(0, 64) || `uploaded_product_${index + 1}`,
+        name: product.name.trim().slice(0, 180),
+        description: product.description.trim().slice(0, 1200),
+        price: typeof product.price === 'string' ? product.price.trim().slice(0, 100) : '',
+        details: typeof product.details === 'string' ? product.details.trim().slice(0, 2000) : '',
+        impact: typeof product.impact === 'string' ? product.impact.trim().slice(0, 600) : '',
+        imageUrl: typeof product.imageUrl === 'string' && /^https?:\/\//i.test(product.imageUrl.trim()) ? product.imageUrl.trim().slice(0, 1000) : '',
+        imageIndex: Number.isInteger(product.imageIndex) && product.imageIndex >= 1 && product.imageIndex <= imageAssets.length ? product.imageIndex : null,
+        ctaLabel: '',
+        ctaUrl: '',
+        active: true,
+        source: fileName
+      })),
+    imageAssets
   };
+}
+
+// DOCX is a ZIP archive; collect embedded images so the model can associate
+// them with extracted catalog items.
+function extractDocxImages(zipBuffer) {
+  const eocd = zipBuffer.lastIndexOf(Buffer.from([0x50, 0x4b, 0x05, 0x06]));
+  if (eocd < 0 || eocd + 22 > zipBuffer.length) return [];
+  const entryCount = zipBuffer.readUInt16LE(eocd + 10);
+  let cursor = zipBuffer.readUInt32LE(eocd + 16);
+  const images = [];
+  let totalBytes = 0;
+  for (let i = 0; i < entryCount && cursor + 46 <= zipBuffer.length && images.length < 8; i++) {
+    if (zipBuffer.readUInt32LE(cursor) !== 0x02014b50) break;
+    const method = zipBuffer.readUInt16LE(cursor + 10);
+    const compressedSize = zipBuffer.readUInt32LE(cursor + 20);
+    const uncompressedSize = zipBuffer.readUInt32LE(cursor + 24);
+    const nameLength = zipBuffer.readUInt16LE(cursor + 28);
+    const extraLength = zipBuffer.readUInt16LE(cursor + 30);
+    const commentLength = zipBuffer.readUInt16LE(cursor + 32);
+    const localOffset = zipBuffer.readUInt32LE(cursor + 42);
+    const name = zipBuffer.toString('utf8', cursor + 46, cursor + 46 + nameLength);
+    cursor += 46 + nameLength + extraLength + commentLength;
+    const extension = name.match(/^word\/media\/[^/]+\.(png|jpe?g|webp|gif)$/i)?.[1]?.toLowerCase();
+    if (!extension || !compressedSize || !uncompressedSize || totalBytes + uncompressedSize > 5 * 1024 * 1024) continue;
+    if (localOffset + 30 > zipBuffer.length || zipBuffer.readUInt32LE(localOffset) !== 0x04034b50) continue;
+    const localNameLength = zipBuffer.readUInt16LE(localOffset + 26);
+    const localExtraLength = zipBuffer.readUInt16LE(localOffset + 28);
+    const dataStart = localOffset + 30 + localNameLength + localExtraLength;
+    const compressed = zipBuffer.subarray(dataStart, dataStart + compressedSize);
+    try {
+      const buffer = method === 0 ? Buffer.from(compressed) : method === 8 ? inflateRawSync(compressed) : null;
+      if (!buffer || buffer.length !== uncompressedSize) continue;
+      const contentType = extension === 'jpg' || extension === 'jpeg' ? 'image/jpeg' : `image/${extension}`;
+      images.push({ buffer, contentType, extension: extension === 'jpeg' ? 'jpg' : extension });
+      totalBytes += buffer.length;
+    } catch (_) { /* Ignore malformed or unsupported media entries. */ }
+  }
+  return images;
+}
+
+// Extract JPEG streams from PDFs when the image is stored with DCTDecode.
+// Other PDF image encodings remain available to the model in the attached PDF,
+// but cannot be stored as standalone widget images by this lightweight parser.
+function extractPdfJpegImages(pdfBuffer) {
+  const source = pdfBuffer.toString('latin1');
+  const images = [];
+  let totalBytes = 0;
+  let cursor = 0;
+  while (images.length < 8) {
+    const imageMarker = source.indexOf('/Subtype /Image', cursor);
+    if (imageMarker < 0) break;
+    const streamMarker = source.indexOf('stream', imageMarker);
+    if (streamMarker < 0 || streamMarker - imageMarker > 1800) break;
+    const dictionary = source.slice(imageMarker, streamMarker);
+    const streamStart = streamMarker + 6 + (source[streamMarker + 6] === '\r' && source[streamMarker + 7] === '\n' ? 2 : /[\r\n]/.test(source[streamMarker + 6] || '') ? 1 : 0);
+    const endMarker = source.indexOf('endstream', streamStart);
+    if (endMarker < 0) break;
+    cursor = endMarker + 9;
+    if (!/\/DCTDecode\b/.test(dictionary)) continue;
+    let end = endMarker;
+    while (end > streamStart && (source[end - 1] === '\n' || source[end - 1] === '\r')) end--;
+    const buffer = pdfBuffer.subarray(streamStart, end);
+    if (buffer.length < 4 || buffer[0] !== 0xff || buffer[1] !== 0xd8 || totalBytes + buffer.length > 5 * 1024 * 1024) continue;
+    images.push({ buffer, contentType: 'image/jpeg', extension: 'jpg' });
+    totalBytes += buffer.length;
+  }
+  return images;
 }
 
 module.exports = {

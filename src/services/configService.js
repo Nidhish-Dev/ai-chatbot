@@ -148,7 +148,7 @@ class ConfigService {
     const draft = current.draft || {};
 
     const liveKeys = [
-      'active', 'branding', 'cagCompanyName', 'channels', 'faqs', 'products', 'brandVoice', 'customKnowledge',
+      'active', 'branding', 'cagCompanyName', 'channels', 'faqs', 'products', 'nudges', 'brandVoice', 'customKnowledge',
       'knowledge', 'promptLive', 'scoring', 'teaser', 'links', 'alerts', 'limits',
       'consultant', 'faqChips', 'leadRules', 'messageLimits', 'tryIt', 'knowledgeDocuments'
     ];
