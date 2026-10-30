@@ -71,6 +71,9 @@
     .nudge-example-tag { display:inline-block; padding:4px 8px; border-radius:999px; background:#f0e7fa; color:#57218b; font-size:10px; font-weight:700; }
     .nudge-example-card h3 { margin:12px 0 6px; color:#241333; font-size:13px; }
     .nudge-example-card p { position:relative; z-index:1; color:#62586b; font-size:12px; line-height:1.5; }
+    .quiz-question-card { padding:16px; border:1px solid var(--border); border-radius:12px; margin:12px 0; background:linear-gradient(145deg,#fff,#fbf8ff); }
+    .quiz-question-head { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:12px; color:var(--text); font-weight:700; }
+    .quiz-question-actions { display:flex; align-items:center; gap:6px; }
     @media (max-width:850px) { .nudge-examples { grid-template-columns:1fr; } }
     .status-pill { display:inline-flex; align-items:center; gap:8px; padding:6px 10px; border-radius:999px; font-size:11.5px; font-weight:650; white-space:nowrap; }
     .status-pill::before { content:""; width:7px; height:7px; border-radius:50%; background:currentColor; }
@@ -120,6 +123,7 @@
       <li class="nav-item active" onclick="switchTab('settings')"><svg class="icon"><use href="#i-settings"></use></svg><span>Settings & AI key</span></li>
       <li class="nav-item" onclick="switchTab('products')"><svg class="icon"><use href="#i-file"></use></svg><span>Products</span></li>
       <li class="nav-item" onclick="switchTab('nudges')"><svg class="icon"><use href="#i-sparkles"></use></svg><span>Nudges</span></li>
+      <li class="nav-item" onclick="switchTab('quiz')"><svg class="icon"><use href="#i-book"></use></svg><span>Quiz</span></li>
       <li class="nav-item" onclick="switchTab('knowledge')"><svg class="icon"><use href="#i-book"></use></svg><span>Business data & CAG</span></li>
       <li class="nav-item" onclick="switchTab('leads')"><svg class="icon"><use href="#i-users"></use></svg><span>Leads</span></li>
       <li class="nav-item" onclick="switchTab('prompt')"><svg class="icon"><use href="#i-sparkles"></use></svg><span>AI prompt</span></li>
@@ -279,6 +283,19 @@
         </div>
       </div>
 
+      <!-- Guided discovery quiz -->
+      <div class="tab-content" id="tab-quiz">
+        <div class="card">
+          <div class="card-title"><span><svg class="icon"><use href="#i-book"></use></svg>Interactive product discovery quiz</span><button class="btn btn-primary" onclick="saveQuiz()"><svg class="icon"><use href="#i-save"></use></svg>Save to draft</button></div>
+          <p style="font-size:13px;color:#666;margin-bottom:14px">Visitors answer these questions in the widget to get recommendations from your published product catalog. The quiz questions and choices can be edited at any time.</p>
+          <label class="form-group" style="margin-bottom:16px"><span class="form-label">Quiz status</span><span><input type="checkbox" id="quizEnabled" checked> Enable guided discovery in the widget</span></label>
+          <label class="form-group"><span class="form-label" for="quizGenerationInstruction">Tell AI what the quiz should discover</span><textarea class="form-control" id="quizGenerationInstruction" placeholder="For example: Find which automation best fits an online store and its biggest order-management challenge." style="min-height:80px"></textarea></label>
+          <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:12px 0"><button class="btn btn-secondary" type="button" id="generateQuizButton" onclick="generateQuizWithAI(this)"><svg class="icon"><use href="#i-sparkles"></use></svg><span>Generate questions with AI</span></button><span id="quizStatus" role="status" style="font-size:12px;color:#666"></span></div>
+          <div id="quizQuestionEditor"></div>
+          <button class="btn btn-secondary" type="button" onclick="addQuizQuestion()">Add question</button>
+        </div>
+      </div>
+
       <!-- TAB 2: Business Data & CAG -->
       <div class="tab-content" id="tab-knowledge">
         <div class="card">
@@ -387,6 +404,7 @@
     let currentOpenAiStatus = {};
     let leadRecords = [];
     let leadColumns = [];
+    let quizQuestions = [];
     if (['localhost', '127.0.0.1'].includes(window.location.hostname)) {
       document.getElementById('localDemoLink').style.display = 'inline-flex';
     }
@@ -589,6 +607,9 @@
       document.getElementById('nudgeCooldown').value = nudgeSettings.cooldownExchanges || 3;
       document.getElementById('nudgeDelaySeconds').value = nudgeSettings.delaySeconds || 30;
       document.getElementById('nudgeInstruction').value = nudgeSettings.instruction || '';
+      const consultant = cfg.draft?.consultant || cfg.consultant || {};
+      document.getElementById('quizEnabled').checked = consultant.enabled !== false;
+      renderQuizEditor(consultant.questions || []);
 
 
       document.getElementById('killSwitchOverall').checked = !!cfg.active;
@@ -867,6 +888,72 @@
       if (!product || !confirm(`Delete ${product.name || 'this product'} from the draft catalog?`)) return;
       editableProducts.splice(index, 1);
       renderProductEditor(editableProducts);
+    }
+    function renderQuizEditor(questions) {
+      quizQuestions = (questions || []).map((question, index) => ({
+        id: question.id || `question_${index + 1}`,
+        order: index + 1,
+        field: question.field || 'custom',
+        question: question.question || '',
+        chips: Array.isArray(question.chips) ? question.chips : []
+      }));
+      const editor = document.getElementById('quizQuestionEditor');
+      editor.innerHTML = quizQuestions.map((question, index) => `<section class="quiz-question-card" data-quiz-index="${index}">
+        <div class="quiz-question-head"><span>Question ${index + 1}</span><div class="quiz-question-actions"><button class="btn btn-secondary" type="button" aria-label="Move question up" onclick="moveQuizQuestion(${index},-1)" ${index === 0 ? 'disabled' : ''}>↑</button><button class="btn btn-secondary" type="button" aria-label="Move question down" onclick="moveQuizQuestion(${index},1)" ${index === quizQuestions.length - 1 ? 'disabled' : ''}>↓</button><button class="lead-delete-btn" type="button" onclick="deleteQuizQuestion(${index})">Delete</button></div></div>
+        <div class="form-grid"><label class="form-group"><span class="form-label">Question</span><input class="form-control" data-quiz-field="question" value="${escapeLeadCell(question.question)}" placeholder="What would you like to improve?"></label>
+        <label class="form-group"><span class="form-label">Save answer as</span><select class="form-control" data-quiz-field="field"><option value="industry" ${question.field === 'industry' ? 'selected' : ''}>Industry</option><option value="team_size" ${question.field === 'team_size' ? 'selected' : ''}>Team size</option><option value="pains" ${question.field === 'pains' ? 'selected' : ''}>Main challenge</option><option value="goal" ${question.field === 'goal' ? 'selected' : ''}>Goal</option><option value="custom" ${question.field === 'custom' ? 'selected' : ''}>Other</option></select></label>
+        <label class="form-group" style="grid-column:1/-1"><span class="form-label">Answer choices (one per line)</span><textarea class="form-control" data-quiz-field="chips" style="min-height:90px" placeholder="Option one&#10;Option two">${escapeLeadCell(question.chips.join('\n'))}</textarea></label></div></section>`).join('');
+      editor.querySelectorAll('[data-quiz-field]').forEach(input => input.addEventListener('input', () => {
+        const question = quizQuestions[Number(input.closest('[data-quiz-index]').dataset.quizIndex)];
+        if (input.dataset.quizField === 'chips') question.chips = input.value.split(/\r?\n/).map(choice => choice.trim()).filter(Boolean);
+        else question[input.dataset.quizField] = input.value;
+      }));
+    }
+    function addQuizQuestion() {
+      quizQuestions.push({ id: `question_${Date.now()}`, order: quizQuestions.length + 1, field: 'custom', question: '', chips: ['', ''] });
+      renderQuizEditor(quizQuestions);
+    }
+    function deleteQuizQuestion(index) {
+      quizQuestions.splice(index, 1);
+      renderQuizEditor(quizQuestions);
+    }
+    function moveQuizQuestion(index, direction) {
+      const next = index + direction;
+      if (next < 0 || next >= quizQuestions.length) return;
+      [quizQuestions[index], quizQuestions[next]] = [quizQuestions[next], quizQuestions[index]];
+      renderQuizEditor(quizQuestions);
+    }
+    async function generateQuizWithAI(button) {
+      const status = document.getElementById('quizStatus');
+      const label = button.querySelector('span');
+      button.disabled = true;
+      label.textContent = 'Generating questions…';
+      status.textContent = '';
+      try {
+        const response = await fetch(`${API_BASE}/api/config/quiz/generate`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ clientId: 'grapelabs', instruction: document.getElementById('quizGenerationInstruction').value.trim() }) });
+        const data = await response.json();
+        if (!response.ok || !data.success) throw new Error(data.error || 'Could not generate quiz questions.');
+        renderQuizEditor(data.questions);
+        status.textContent = `Generated ${data.questions.length} questions. Review and edit them, then save to Draft.`;
+      } catch (error) {
+        status.textContent = error.message;
+      } finally {
+        button.disabled = false;
+        label.textContent = 'Generate questions with AI';
+      }
+    }
+    async function saveQuiz() {
+      if (quizQuestions.length < 2) return alert('Add at least two quiz questions.');
+      const questions = quizQuestions.map((question, index) => ({ ...question, order: index + 1, question: question.question.trim(), chips: question.chips.map(choice => choice.trim()).filter(Boolean) }));
+      if (questions.some(question => !question.question || question.chips.length < 2)) return alert('Every quiz question needs text and at least two answer choices.');
+      const previous = currentConfig?.draft?.consultant || currentConfig?.consultant || {};
+      const consultant = { ...previous, enabled: document.getElementById('quizEnabled').checked, questions };
+      const response = await fetch(`${API_BASE}/api/config/draft`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ clientId: 'grapelabs', draft: { consultant } }) });
+      const data = await response.json();
+      if (!response.ok || !data.success) return alert(data.error || 'Could not save the quiz.');
+      currentConfig = data.config;
+      renderQuizEditor(questions);
+      document.getElementById('quizStatus').textContent = 'Quiz saved to Draft. Publish changes when ready.';
     }
     function collectNudgeSettings() {
       return {
