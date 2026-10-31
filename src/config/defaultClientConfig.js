@@ -83,6 +83,103 @@ module.exports = {
     instruction: 'Be helpful and low pressure. Suggest a relevant next step based on what the visitor asked; never repeat a question they already answered.'
   },
 
+  // Conversation starters & quick actions (welcome screen, in-chat shortcut bar, teaser)
+  quickActions: {
+    enabled: true,
+    // Suggested questions. Leave empty to use the first FAQ questions automatically.
+    starters: [],
+    maxStarters: 3,
+    showInChat: true,     // shortcut bar above the message box
+    showInTeaser: true,   // use starters as teaser chips when no teaser chips are set
+    // type: message | recommend | quiz | tryit | booking | human | whatsapp | link
+    actions: [
+      { id: 'recommend', label: 'Recommend for me', type: 'recommend', value: '', enabled: true },
+      { id: 'products', label: 'Browse products', type: 'message', value: 'What products do you offer?', enabled: true },
+      { id: 'book', label: 'Book a call', type: 'booking', value: 'I would like to book a call', enabled: true },
+      { id: 'support', label: 'Contact support', type: 'human', value: 'I would like to talk to someone from your team', enabled: true }
+    ]
+  },
+
+  // Human handover: redirect to a normal WhatsApp chat (wa.me link, no WhatsApp API) with the
+  // visitor's details and last message pre-filled. Configured in the control panel → Human handover.
+  handover: {
+    enabled: true,
+    whatsappNumber: '',            // empty = use links.whatsappRefNumber
+    triggers: {
+      onUnsure: true,              // the AI can't answer confidently
+      onFrustration: true          // the visitor sounds frustrated
+    },                             // explicit requests ("talk to a person") always offer handover
+    collectDetailsFirst: false,    // ask the required lead questions before showing the WhatsApp button
+    detailsMessage: 'Before I connect you with our team on WhatsApp, please share a few details so they know who you are.',
+    showHeaderButton: true,        // "Talk to a person" button in the chat header
+    message: 'Our team can take it from here. Tap below to continue on WhatsApp \u2014 your details and question are already filled in, just press send.',
+    buttonLabel: 'Continue on WhatsApp',
+    greeting: 'Hi {brand} team, I was chatting with your assistant on the website and would like to talk to a person.',
+    include: { name: true, email: true, phone: true, company: true, lastMessage: true, page: false, refCode: true }
+  },
+
+  // Assistant personality (control panel → Personality). Compiled into the AI's brand voice instructions;
+  // the brandVoice text below is kept as additional brand rules.
+  personality: {
+    enabled: true,
+    preset: 'custom',
+    assistantName: '',
+    role: 'AI automation consultant',
+    description: 'Sharp, confident and consultative. Practical advice with zero corporate jargon, delivered in a friendly way.',
+    traits: ['sharp', 'confident', 'consultative', 'practical', 'friendly'],
+    formality: 2,
+    energy: 3,
+    detail: 2,
+    humour: 1,
+    empathy: 3,
+    emoji: 'none',
+    perspective: 'we',
+    useVisitorName: true,
+    language: 'English',
+    mirrorLanguage: false,
+    hinglish: true,
+    formatting: 'bullets',
+    maxSentences: 5,
+    offTopic: 'redirect',
+    doRules: ['Focus on the visitor\'s business problem before suggesting a solution'],
+    dontRules: ['Use corporate jargon or buzzwords'],
+    preferredWords: '',
+    avoidWords: 'synergy, leverage, cutting-edge, revolutionary',
+    examples: [],
+    showNameInHeader: true
+  },
+
+  // Lead capture: asked as a separate message (never inside the AI's answer)
+  leadCapture: {
+    enabled: true,
+    mode: 'both',              // 'questions' (during chat) | 'gated' (only before a resource) | 'both'
+    style: 'form',             // 'form' (one card with all fields) | 'conversational' (one question at a time)
+    afterExchanges: 3,         // ask after this many visitor messages
+    repeatAfterExchanges: 5,   // if skipped, ask again after this many more messages
+    maxAsksPerSession: 2,      // never ask more often than this in one conversation
+    questionsPerAsk: 3,        // how many unanswered questions to ask at once
+    introMessage: 'Before we continue, could you share a few details so our team can follow up with you?',
+    gateMessage: 'Happy to share “{title}”. Please fill in a few quick details to unlock it.',
+    thankYouMessage: 'Thanks{name}! Your details are saved.',
+    consentText: '',
+    questions: [
+      { id: 'name', label: 'Name', question: 'What is your name?', field: 'name', type: 'text', required: true, enabled: true, options: [] },
+      { id: 'email', label: 'Email', question: 'What is your email address?', field: 'email', type: 'email', required: true, enabled: true, options: [] },
+      { id: 'phone', label: 'WhatsApp number', question: 'What is your WhatsApp number?', field: 'phone', type: 'phone', required: false, enabled: true, options: [] },
+      { id: 'company', label: 'Company', question: 'Which company are you with?', field: 'company', type: 'text', required: false, enabled: false, options: [] }
+    ],
+    // Downloadable files or links that require details first
+    resources: []
+  },
+
+  // Personalised product recommendations
+  recommendations: {
+    enabled: true,
+    showOnWelcome: true,  // "Recommended for you" on the welcome screen once there is a signal
+    maxItems: 3,
+    showReasons: true     // short "why this fits" line on product cards
+  },
+
   // Links & Integrations
   links: {
     calendlyUrl: 'https://calendly.com/grapelabs/discovery',

@@ -163,6 +163,16 @@ Both endpoints return the same JSON response shape:
 
 Use `reply` as the message text. `buttons` and `cards` are optional channel-specific enhancements; send them only if your channel workflow supports them.
 
+### Lead capture and gated resources
+
+Lead questions are never added to `reply`. When the bot wants to ask for details, the response includes:
+
+- `followUp`: the lead question as a separate message (send it after `reply`).
+- `attachments`: files or links the visitor unlocked, each with `title` and an absolute, expiring `url`.
+- `messages`: everything to send, in order (`reply`, then attachment links, then `followUp`). The simplest n8n setup loops over `messages` and sends each one.
+
+The visitor's next message is treated as the answer: email addresses and phone numbers are picked up automatically, and a pending gated resource is sent once its required details are known. Configure questions, conditions and resources in the control panel's **Lead capture** tab.
+
 ## Errors
 
 - `400`: invalid or missing request fields

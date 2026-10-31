@@ -13,6 +13,8 @@ const eventRoutes = require('./routes/eventRoutes');
 const configRoutes = require('./routes/configRoutes');
 const knowledgeRoutes = require('./routes/knowledgeRoutes');
 const leadRoutes = require('./routes/leadRoutes');
+const recommendationRoutes = require('./routes/recommendationRoutes');
+const leadCaptureRoutes = require('./routes/leadCaptureRoutes');
 
 const app = express();
 const controlPanelPath = path.resolve(__dirname, '../public/control-panel.html');
@@ -69,6 +71,8 @@ app.use('/', eventRoutes);
 app.use('/', configRoutes);
 app.use('/', knowledgeRoutes);
 app.use('/', leadRoutes);
+app.use('/', recommendationRoutes);
+app.use('/', leadCaptureRoutes);
 
 // Error Handling Middleware
 app.use((err, req, res, next) => {

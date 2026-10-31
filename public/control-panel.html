@@ -71,6 +71,27 @@
     .nudge-example-tag { display:inline-block; padding:4px 8px; border-radius:999px; background:#f0e7fa; color:#57218b; font-size:10px; font-weight:700; }
     .nudge-example-card h3 { margin:12px 0 6px; color:#241333; font-size:13px; }
     .nudge-example-card p { position:relative; z-index:1; color:#62586b; font-size:12px; line-height:1.5; }
+    .pers-presets { display:flex; flex-wrap:wrap; gap:8px; margin:4px 0 16px; }
+    .pers-preset { padding:9px 13px; border:1px solid var(--border); border-radius:12px; background:#fff; text-align:left; cursor:pointer; font:inherit; }
+    .pers-preset strong { display:block; font-size:13px; color:var(--text); }
+    .pers-preset small { display:block; font-size:11px; color:#777; margin-top:2px; }
+    .pers-preset:hover, .pers-preset.active { border-color:var(--purple); background:var(--purple-soft); }
+    .pers-slider { display:grid; grid-template-columns:150px 1fr 70px; align-items:center; gap:12px; margin:10px 0; }
+    .pers-slider .form-label { margin:0; }
+    .pers-slider input[type=range] { width:100%; accent-color:var(--purple); }
+    .pers-slider-ends { display:flex; justify-content:space-between; font-size:11px; color:#888; margin-top:2px; }
+    .pers-slider output { font-size:12px; font-weight:650; color:var(--purple); }
+    .pers-traits { display:flex; flex-wrap:wrap; gap:6px; margin-top:8px; }
+    .pers-trait { padding:5px 10px; border:1px solid var(--border); border-radius:999px; background:#fff; font:inherit; font-size:12px; cursor:pointer; color:#555; }
+    .pers-trait.on { background:var(--purple); border-color:var(--purple); color:#fff; }
+    .pers-chat { display:flex; flex-direction:column; gap:8px; margin-top:12px; padding:14px; border:1px solid var(--border); border-radius:12px; background:#fbf9fd; }
+    .pers-bubble { max-width:85%; padding:9px 13px; border-radius:16px; font-size:13.5px; line-height:1.45; white-space:pre-wrap; }
+    .pers-bubble.user { align-self:flex-end; background:var(--purple); color:#fff; }
+    .pers-bubble.bot { align-self:flex-start; background:#fff; border:1px solid var(--border); }
+    .pers-instructions { white-space:pre-wrap; font-size:12px; line-height:1.5; background:#faf8fc; border:1px solid var(--border); border-radius:10px; padding:12px; max-height:340px; overflow:auto; margin-top:8px; }
+    @media (max-width:640px) { .pers-slider { grid-template-columns:1fr; gap:4px; } }
+    .wa-preview { background:#e5ddd5; border-radius:12px; padding:16px; margin-top:8px; }
+    .wa-preview-bubble { margin-left:auto; max-width:92%; background:#dcf8c6; border-radius:10px 2px 10px 10px; padding:9px 12px; font-size:13px; line-height:1.45; white-space:pre-wrap; box-shadow:0 1px 1px rgba(0,0,0,.12); }
     .quiz-question-card { padding:16px; border:1px solid var(--border); border-radius:12px; margin:12px 0; background:linear-gradient(145deg,#fff,#fbf8ff); }
     .quiz-question-head { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:12px; color:var(--text); font-weight:700; }
     .quiz-question-actions { display:flex; align-items:center; gap:6px; }
@@ -124,6 +145,10 @@
       <li class="nav-item" onclick="switchTab('products')"><svg class="icon"><use href="#i-file"></use></svg><span>Products</span></li>
       <li class="nav-item" onclick="switchTab('nudges')"><svg class="icon"><use href="#i-sparkles"></use></svg><span>Nudges</span></li>
       <li class="nav-item" onclick="switchTab('quiz')"><svg class="icon"><use href="#i-book"></use></svg><span>Quiz</span></li>
+      <li class="nav-item" onclick="switchTab('personality')"><svg class="icon"><use href="#i-sparkles"></use></svg><span>Personality</span></li>
+      <li class="nav-item" onclick="switchTab('handover')"><svg class="icon"><use href="#i-users"></use></svg><span>Human handover</span></li>
+      <li class="nav-item" onclick="switchTab('leadcapture')"><svg class="icon"><use href="#i-users"></use></svg><span>Lead capture</span></li>
+      <li class="nav-item" onclick="switchTab('engage')"><svg class="icon"><use href="#i-sparkles"></use></svg><span>Quick actions & recommendations</span></li>
       <li class="nav-item" onclick="switchTab('knowledge')"><svg class="icon"><use href="#i-book"></use></svg><span>Business data & CAG</span></li>
       <li class="nav-item" onclick="switchTab('leads')"><svg class="icon"><use href="#i-users"></use></svg><span>Leads</span></li>
       <li class="nav-item" onclick="switchTab('prompt')"><svg class="icon"><use href="#i-sparkles"></use></svg><span>AI prompt</span></li>
@@ -293,6 +318,197 @@
           <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:12px 0"><button class="btn btn-secondary" type="button" id="generateQuizButton" onclick="generateQuizWithAI(this)"><svg class="icon"><use href="#i-sparkles"></use></svg><span>Generate questions with AI</span></button><span id="quizStatus" role="status" style="font-size:12px;color:#666"></span></div>
           <div id="quizQuestionEditor"></div>
           <button class="btn btn-secondary" type="button" onclick="addQuizQuestion()">Add question</button>
+        </div>
+      </div>
+
+      <!-- Assistant personality -->
+      <div class="tab-content" id="tab-personality">
+        <div class="card">
+          <div class="card-title"><span><svg class="icon"><use href="#i-sparkles"></use></svg>Identity</span><button class="btn btn-primary" onclick="savePersonality()"><svg class="icon"><use href="#i-save"></use></svg>Save to draft</button></div>
+          <p style="font-size:13px;color:#666;margin-bottom:10px">Define how the assistant sounds and behaves. Start from a preset, then fine-tune. Style never overrides the bot's accuracy, pricing and escalation rules.</p>
+          <label class="form-group" style="margin-bottom:12px"><span class="form-label">Status</span><span><input type="checkbox" id="persEnabled" checked> Use these personality settings (off = use only the brand rules text below)</span></label>
+          <div class="form-label">Start from a preset</div>
+          <div class="pers-presets" id="persPresets"></div>
+          <div class="form-grid">
+            <label class="form-group"><span class="form-label">Assistant name (optional)</span><input class="form-control" id="persName" maxlength="40" placeholder="e.g. Aria"></label>
+            <label class="form-group"><span class="form-label">Role</span><input class="form-control" id="persRole" maxlength="120" placeholder="e.g. AI automation consultant"></label>
+            <div class="form-group"><label class="form-label" for="persPerspective">Speaks as</label><select class="form-control" id="persPerspective"><option value="we">The company (“we can help…”)</option><option value="i">Itself (“I can help…”)</option></select></div>
+            <label class="form-group"><span class="form-label">Chat header</span><span><input type="checkbox" id="persShowName" checked> Show the assistant's name and role in the chat header</span></label>
+            <label class="form-group" style="grid-column:1/-1"><span class="form-label">Personality in your own words</span><textarea class="form-control" id="persDescription" style="min-height:70px" maxlength="1200" placeholder="e.g. A knowledgeable friend who explains things simply, never pushy, always practical."></textarea></label>
+            <div class="form-group" style="grid-column:1/-1"><label class="form-label" for="persTraits">Core traits (comma-separated, or tap suggestions)</label><input class="form-control" id="persTraits" placeholder="friendly, confident, practical"><div class="pers-traits" id="persTraitSuggestions"></div></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title"><span><svg class="icon"><use href="#i-settings"></use></svg>Tone & communication style</span><button class="btn btn-primary" onclick="savePersonality()"><svg class="icon"><use href="#i-save"></use></svg>Save to draft</button></div>
+          <div id="persSliders"></div>
+          <div class="form-grid" style="margin-top:12px">
+            <div class="form-group"><label class="form-label" for="persEmoji">Emoji</label><select class="form-control" id="persEmoji"><option value="none">Never</option><option value="occasional">Occasionally</option><option value="frequent">Often</option></select></div>
+            <div class="form-group"><label class="form-label" for="persFormatting">Formatting</label><select class="form-control" id="persFormatting"><option value="bullets">Bullet points for lists</option><option value="prose">Flowing sentences</option></select></div>
+            <div class="form-group"><label class="form-label" for="persMaxSentences">Typical reply length (max sentences)</label><input class="form-control" id="persMaxSentences" type="number" min="1" max="15" value="5"></div>
+            <label class="form-group"><span class="form-label">Personal touch</span><span><input type="checkbox" id="persUseName" checked> Use the visitor's name when known</span></label>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title"><span><svg class="icon"><use href="#i-book"></use></svg>Language & behaviour</span><button class="btn btn-primary" onclick="savePersonality()"><svg class="icon"><use href="#i-save"></use></svg>Save to draft</button></div>
+          <div class="form-grid">
+            <label class="form-group"><span class="form-label">Default language</span><input class="form-control" id="persLanguage" maxlength="40" placeholder="English"></label>
+            <label class="form-group"><span class="form-label">Other languages</span><span><input type="checkbox" id="persMirror"> Reply in the visitor's language</span><span><input type="checkbox" id="persHinglish"> Reply in Hinglish when the visitor uses it</span></label>
+            <div class="form-group"><label class="form-label" for="persOffTopic">Off-topic questions</label><select class="form-control" id="persOffTopic"><option value="redirect">Politely decline and steer back</option><option value="brief_then_redirect">Answer briefly, then steer back</option></select></div>
+            <label class="form-group"><span class="form-label">Always do (one per line)</span><textarea class="form-control" id="persDo" style="min-height:90px" placeholder="Ask one clarifying question when the request is vague&#10;End with a helpful next step"></textarea></label>
+            <label class="form-group"><span class="form-label">Never do (one per line)</span><textarea class="form-control" id="persDont" style="min-height:90px" placeholder="Pressure the visitor to buy&#10;Mention competitors by name"></textarea></label>
+            <label class="form-group"><span class="form-label">Brand words to prefer</span><input class="form-control" id="persPreferred" placeholder="e.g. “automation systems” instead of “bots”"></label>
+            <label class="form-group"><span class="form-label">Words to avoid</span><input class="form-control" id="persAvoid" placeholder="e.g. synergy, cheap, guaranteed"></label>
+            <label class="form-group" style="grid-column:1/-1"><span class="form-label">Additional brand rules (business rules such as pricing policy; added after the personality)</span><textarea class="form-control" id="persBrandVoice" style="min-height:120px"></textarea></label>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title"><span><svg class="icon"><use href="#i-sparkles"></use></svg>Example replies</span><button class="btn btn-primary" onclick="savePersonality()"><svg class="icon"><use href="#i-save"></use></svg>Save to draft</button></div>
+          <p style="font-size:13px;color:#666;margin-bottom:6px">Show the AI how you'd like it to answer (up to 5). It copies the style, not the exact words.</p>
+          <div id="persExamples"></div>
+          <button class="btn btn-secondary" type="button" onclick="addPersonalityExample()">Add example</button>
+        </div>
+
+        <div class="card">
+          <div class="card-title"><span><svg class="icon"><use href="#i-search"></use></svg>Try it</span></div>
+          <p style="font-size:13px;color:#666;margin-bottom:10px">Test a reply using the settings on this page (unsaved changes included). Uses your OpenAI key.</p>
+          <div style="display:flex;gap:10px;flex-wrap:wrap"><input class="form-control" id="persTestMessage" style="flex:1;min-width:220px" value="Hi! What can you help my business with?"><button class="btn btn-secondary" type="button" id="persTestButton" onclick="testPersonality()"><svg class="icon"><use href="#i-sparkles"></use></svg><span>Test reply</span></button><button class="btn btn-secondary" type="button" onclick="showPersonalityInstructions()">Show AI instructions</button></div>
+          <div id="persTestStatus" style="font-size:12px;color:#666;margin-top:8px"></div>
+          <div id="persChat" class="pers-chat" style="display:none"></div>
+          <div id="persInstructions" class="pers-instructions" style="display:none"></div>
+        </div>
+      </div>
+
+      <!-- Human handover -->
+      <div class="tab-content" id="tab-handover">
+        <div class="card">
+          <div class="card-title"><span><svg class="icon"><use href="#i-users"></use></svg>Hand over to your team on WhatsApp</span><button class="btn btn-primary" onclick="saveHandover()"><svg class="icon"><use href="#i-save"></use></svg>Save to draft</button></div>
+          <p style="font-size:13px;color:#666;margin-bottom:14px">When a person is needed, the bot shows a “Continue on WhatsApp” button. It opens a normal WhatsApp chat with your number, with the visitor's details and last question already typed in — they just press send. No WhatsApp API is used.</p>
+          <div class="form-grid">
+            <label class="form-group"><span class="form-label">Status</span><span><input type="checkbox" id="hoEnabled" checked> Offer WhatsApp handover</span></label>
+            <label class="form-group"><span class="form-label">Team WhatsApp number (with country code)</span><input class="form-control" id="hoNumber" placeholder="+91 98765 43210"><small id="hoNumberHint" style="font-size:11px;color:#777"></small></label>
+            <label class="form-group"><span class="form-label">Chat header</span><span><input type="checkbox" id="hoHeaderButton" checked> Show a “Talk to a person” button in the chat header</span></label>
+          </div>
+          <div class="nudge-examples-title" style="margin-top:18px">When to offer it</div>
+          <div class="form-grid">
+            <label class="form-group"><span class="form-label">Visitor asks for a person</span><span><input type="checkbox" checked disabled> Always (e.g. “talk to someone”, “contact support”)</span></label>
+            <label class="form-group"><span class="form-label">AI can't answer</span><span><input type="checkbox" id="hoOnUnsure" checked> Offer it when the bot isn't sure</span></label>
+            <label class="form-group"><span class="form-label">Visitor seems frustrated</span><span><input type="checkbox" id="hoOnFrustration" checked> Offer it on messages like “this isn't helpful”</span></label>
+            <label class="form-group"><span class="form-label">Collect details first</span><span><input type="checkbox" id="hoCollectFirst"> Ask the required Lead capture questions before showing the button</span></label>
+            <label class="form-group" style="grid-column:1/-1"><span class="form-label">Message when collecting details first</span><input class="form-control" id="hoDetailsMessage"></label>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title"><span><svg class="icon"><use href="#i-sparkles"></use></svg>Handover message</span><button class="btn btn-primary" onclick="saveHandover()"><svg class="icon"><use href="#i-save"></use></svg>Save to draft</button></div>
+          <div class="form-grid">
+            <label class="form-group" style="grid-column:1/-1"><span class="form-label">Message shown in the chat</span><input class="form-control" id="hoMessage"></label>
+            <label class="form-group"><span class="form-label">Button label</span><input class="form-control" id="hoButtonLabel" maxlength="40"></label>
+            <label class="form-group" style="grid-column:1/-1"><span class="form-label">First line of the WhatsApp message (use {brand} for your brand name)</span><input class="form-control" id="hoGreeting"></label>
+            <div class="form-group" style="grid-column:1/-1"><span class="form-label">Include in the WhatsApp message</span><span style="display:flex;flex-wrap:wrap;gap:6px 18px">
+              <label><input type="checkbox" data-ho-include="name"> Name</label><label><input type="checkbox" data-ho-include="email"> Email</label><label><input type="checkbox" data-ho-include="phone"> Phone</label><label><input type="checkbox" data-ho-include="company"> Company / website</label><label><input type="checkbox" data-ho-include="lastMessage"> Last question</label><label><input type="checkbox" data-ho-include="page"> Page they were on</label><label><input type="checkbox" data-ho-include="refCode"> Reference code</label></span>
+              <small style="font-size:11px;color:#777;margin-top:4px">Details are only included when the visitor has shared them. The reference code links the WhatsApp chat back to this lead.</small></div>
+          </div>
+          <div class="nudge-examples-title" style="margin-top:14px">Preview (sample visitor)</div>
+          <div class="wa-preview"><div class="wa-preview-bubble" id="hoPreview"></div></div>
+          <div style="display:flex;gap:10px;align-items:center;margin-top:12px;flex-wrap:wrap"><a class="btn btn-secondary" id="hoTestLink" href="#" target="_blank" rel="noopener"><svg class="icon"><use href="#i-external"></use></svg>Open test chat in WhatsApp</a><span id="hoStatus" style="font-size:12px;color:#666"></span></div>
+        </div>
+      </div>
+
+      <!-- Lead capture -->
+      <div class="tab-content" id="tab-leadcapture">
+        <div class="card">
+          <div class="card-title"><span><svg class="icon"><use href="#i-users"></use></svg>How leads are captured</span><button class="btn btn-primary" onclick="saveLeadCaptureSettings()"><svg class="icon"><use href="#i-save"></use></svg>Save to draft</button></div>
+          <p style="font-size:13px;color:#666;margin-bottom:14px">Lead questions are always shown as their own message after the bot's answer — never mixed into the answer.</p>
+          <div class="form-grid">
+            <label class="form-group"><span class="form-label">Status</span><span><input type="checkbox" id="lcEnabled" checked> Capture leads</span></label>
+            <div class="form-group"><label class="form-label" for="lcMode">When to ask</label><select class="form-control" id="lcMode" onchange="updateLeadCaptureModeHint()"><option value="both">During the chat and before resources</option><option value="questions">During the chat only</option><option value="gated">Only before accessing a resource</option></select></div>
+            <div class="form-group"><label class="form-label" for="lcStyle">How to ask</label><select class="form-control" id="lcStyle"><option value="form">Short form in one message</option><option value="conversational">One question at a time</option></select></div>
+          </div>
+          <div id="lcChatConditions">
+            <div class="nudge-examples-title" style="margin-top:18px">Conditions for asking during the chat</div>
+            <div class="form-grid">
+              <div class="form-group"><label class="form-label" for="lcAfterExchanges">Ask after this many visitor messages</label><input class="form-control" id="lcAfterExchanges" type="number" min="1" max="50" value="3"></div>
+              <div class="form-group"><label class="form-label" for="lcQuestionsPerAsk">Number of questions to ask at once</label><input class="form-control" id="lcQuestionsPerAsk" type="number" min="1" max="10" value="3"></div>
+              <div class="form-group"><label class="form-label" for="lcRepeatAfter">If skipped, ask again after this many messages</label><input class="form-control" id="lcRepeatAfter" type="number" min="1" max="50" value="5"></div>
+              <div class="form-group"><label class="form-label" for="lcMaxAsks">Maximum times to ask per conversation</label><input class="form-control" id="lcMaxAsks" type="number" min="1" max="10" value="2"></div>
+            </div>
+            <p style="font-size:12px;color:#777;margin-top:8px">Only unanswered questions are asked, and the bot stops asking once every required question has an answer.</p>
+          </div>
+          <div class="nudge-examples-title" style="margin-top:18px">Messages</div>
+          <div class="form-grid">
+            <label class="form-group" style="grid-column:1/-1"><span class="form-label">Message shown above the questions</span><input class="form-control" id="lcIntro"></label>
+            <label class="form-group" style="grid-column:1/-1"><span class="form-label">Message before a resource (use {title} for the resource name)</span><input class="form-control" id="lcGateMessage"></label>
+            <label class="form-group"><span class="form-label">Thank-you message (use {name} for “, Name”)</span><input class="form-control" id="lcThankYou"></label>
+            <label class="form-group"><span class="form-label">Consent note under the form (optional)</span><input class="form-control" id="lcConsent" placeholder="By submitting, you agree that we may contact you."></label>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title"><span><svg class="icon"><use href="#i-book"></use></svg>Questions <span id="lcQuestionCount" style="font-weight:500;color:#777;font-size:13px;margin-left:6px"></span></span><button class="btn btn-primary" onclick="saveLeadCaptureSettings()"><svg class="icon"><use href="#i-save"></use></svg>Save to draft</button></div>
+          <p style="font-size:13px;color:#666;margin-bottom:6px">Edit the wording, where each answer is saved, and whether it's required. Answers saved as “Other” appear as their own column in Leads.</p>
+          <div id="lcQuestionEditor"></div>
+          <button class="btn btn-secondary" type="button" onclick="addLeadQuestion()">Add question</button>
+        </div>
+
+        <div class="card" id="lcResourcesCard">
+          <div class="card-title"><span><svg class="icon"><use href="#i-file"></use></svg>Gated resources (links)</span><button class="btn btn-primary" onclick="saveLeadCaptureSettings()"><svg class="icon"><use href="#i-save"></use></svg>Save to draft</button></div>
+          <p style="font-size:13px;color:#666;margin-bottom:6px">When a visitor asks for one of these (brochure, price list, case study…), the bot asks for the selected details first, then shares the link. Paste a link to anything — a PDF, Google Doc, Drive or Dropbox file, video, or web page. The real link stays hidden until the visitor has shared their details (it's opened through a private link that expires after 7 days).</p>
+          <div id="lcResourceEditor"></div>
+          <button class="btn btn-secondary" type="button" onclick="addLeadResource()">Add resource</button>
+          <span id="lcStatus" role="status" style="font-size:12px;color:#666;margin-left:10px"></span>
+        </div>
+      </div>
+
+      <!-- Conversation starters, quick actions & personalised recommendations -->
+      <div class="tab-content" id="tab-engage">
+        <div class="card">
+          <div class="card-title"><span><svg class="icon"><use href="#i-sparkles"></use></svg>Conversation starters</span><button class="btn btn-primary" onclick="saveEngagementSettings()"><svg class="icon"><use href="#i-save"></use></svg>Save to draft</button></div>
+          <p style="font-size:13px;color:#666;margin-bottom:14px">Suggested questions visitors can tap on the welcome screen. Leave the list empty to use your first FAQ questions automatically.</p>
+          <div class="form-grid">
+            <label class="form-group"><span class="form-label">Status</span><span><input type="checkbox" id="qaEnabled" checked> Show starters and quick actions</span></label>
+            <label class="form-group"><span class="form-label">In-chat shortcut bar</span><span><input type="checkbox" id="qaShowInChat" checked> Show quick actions above the message box</span></label>
+            <label class="form-group"><span class="form-label">Teaser pop-up</span><span><input type="checkbox" id="qaShowInTeaser" checked> Use starters as teaser chips when none are set</span></label>
+            <div class="form-group"><label class="form-label" for="qaMaxStarters">Starters shown on the welcome screen</label><input class="form-control" id="qaMaxStarters" type="number" min="1" max="6" value="3"></div>
+            <label class="form-group" style="grid-column:1/-1"><span class="form-label">Suggested questions (one per line)</span><textarea class="form-control" id="qaStarters" style="min-height:110px" placeholder="What do you offer?&#10;Which product is right for my business?&#10;How does setup work?"></textarea></label>
+            <label class="form-group" style="grid-column:1/-1"><span class="form-label" for="qaStarterInstruction">Optional: tell AI what the starters should focus on</span><input class="form-control" id="qaStarterInstruction" placeholder="For example: focus on WhatsApp automation for online stores"></label>
+          </div>
+          <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:12px">
+            <button class="btn btn-secondary" type="button" id="generateStartersButton" onclick="generateStartersWithAI(this)"><svg class="icon"><use href="#i-sparkles"></use></svg><span>Generate with AI</span></button>
+            <button class="btn btn-secondary" type="button" onclick="useFaqStarters()">Use FAQ questions</button>
+            <span id="qaStatus" role="status" style="font-size:12px;color:#666"></span>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title"><span><svg class="icon"><use href="#i-settings"></use></svg>Quick action buttons</span><button class="btn btn-primary" onclick="saveEngagementSettings()"><svg class="icon"><use href="#i-save"></use></svg>Save to draft</button></div>
+          <p style="font-size:13px;color:#666;margin-bottom:6px">Shortcut buttons shown on the welcome screen and in the chat. Up to 8 enabled actions are shown.</p>
+          <p style="font-size:12px;color:#777;margin-bottom:6px"><b>Send a message</b>: sends the text in “Value”. <b>Recommend for me</b>: personalised picks (runs the quiz first if nothing is known yet). <b>Book a call</b>: opens your Calendly link. <b>Contact support</b>: alerts your team. <b>Open link</b>: opens the URL in “Value”.</p>
+          <div id="quickActionEditor"></div>
+          <button class="btn btn-secondary" type="button" onclick="addQuickAction()">Add quick action</button>
+        </div>
+
+        <div class="card">
+          <div class="card-title"><span><svg class="icon"><use href="#i-file"></use></svg>Personalised product recommendations</span><button class="btn btn-primary" onclick="saveEngagementSettings()"><svg class="icon"><use href="#i-save"></use></svg>Save to draft</button></div>
+          <p style="font-size:13px;color:#666;margin-bottom:14px">Products are ranked for each visitor from their industry and needs (chat or quiz), pages they browsed on your site, products they opened or clicked, topics they asked about, and purchase intent. The AI uses this shortlist when recommending, and it appears on the welcome screen once there is a signal.</p>
+          <div class="form-grid">
+            <label class="form-group"><span class="form-label">Status</span><span><input type="checkbox" id="recoEnabled" checked> Personalise recommendations</span></label>
+            <label class="form-group"><span class="form-label">Welcome screen</span><span><input type="checkbox" id="recoShowOnWelcome" checked> Show “Recommended for you”</span></label>
+            <label class="form-group"><span class="form-label">Reasons</span><span><input type="checkbox" id="recoShowReasons" checked> Show why each product fits</span></label>
+            <div class="form-group"><label class="form-label" for="recoMaxItems">Products per recommendation</label><input class="form-control" id="recoMaxItems" type="number" min="1" max="6" value="3"></div>
+          </div>
+          <div class="nudge-examples-title" style="margin-top:18px">Preview with a sample visitor</div>
+          <div class="form-grid">
+            <div class="form-group"><label class="form-label" for="recoPreviewIndustry">Industry</label><input class="form-control" id="recoPreviewIndustry" placeholder="e.g. D2C / E-commerce"></div>
+            <div class="form-group"><label class="form-label" for="recoPreviewPains">Main challenge</label><input class="form-control" id="recoPreviewPains" placeholder="e.g. Order & inventory updates"></div>
+            <div class="form-group"><label class="form-label" for="recoPreviewInterests">Asked about</label><input class="form-control" id="recoPreviewInterests" placeholder="e.g. abandoned carts, WhatsApp"></div>
+            <div class="form-group"><label class="form-label" for="recoPreviewIntent">Purchase intent</label><select class="form-control" id="recoPreviewIntent"><option value="browsing">Browsing</option><option value="considering">Considering</option><option value="ready">Ready to buy</option></select></div>
+            <label class="form-group" style="grid-column:1/-1"><span class="form-label">Pages browsed (one URL per line, optional)</span><textarea class="form-control" id="recoPreviewPages" style="min-height:60px" placeholder="https://yoursite.com/solutions/cart-recovery"></textarea></label>
+          </div>
+          <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:12px"><button class="btn btn-secondary" type="button" onclick="previewRecommendations()"><svg class="icon"><use href="#i-search"></use></svg>Preview recommendations</button><span id="recoPreviewStatus" style="font-size:12px;color:#666"></span></div>
+          <div id="recoPreview" class="nudge-preview" style="display:none"></div>
         </div>
       </div>
 
@@ -610,6 +826,10 @@
       const consultant = cfg.draft?.consultant || cfg.consultant || {};
       document.getElementById('quizEnabled').checked = consultant.enabled !== false;
       renderQuizEditor(consultant.questions || []);
+      populateEngagementUI(cfg);
+      loadLeadCaptureSettings();
+      populatePersonality(cfg);
+      populateHandover(cfg);
 
 
       document.getElementById('killSwitchOverall').checked = !!cfg.active;
@@ -993,6 +1213,584 @@
         output.innerHTML = `<strong>${escapeLeadCell(preview.summary || 'Nudge behavior')}</strong>${(preview.conditions || []).map(row => `<p style="margin-top:10px"><b>When:</b> ${escapeLeadCell(row.when)}<br><b>Example:</b> ${escapeLeadCell(row.nudge)}</p>`).join('')}<p style="margin-top:10px"><b>No nudge:</b> ${(preview.suppressed || []).map(escapeLeadCell).join(' · ')}</p>`;
         output.style.display = 'block';
         status.textContent = 'AI-generated from these settings. Save settings to Draft to keep changes.';
+      } catch (error) { status.textContent = error.message; }
+    }
+
+    // Human handover (WhatsApp redirect)
+    const HANDOVER_DEFAULTS = {
+      message: 'Our team can take it from here. Tap below to continue on WhatsApp — your details and question are already filled in, just press send.',
+      buttonLabel: 'Continue on WhatsApp',
+      greeting: 'Hi {brand} team, I was chatting with your assistant on the website and would like to talk to a person.',
+      detailsMessage: 'Before I connect you with our team on WhatsApp, please share a few details so they know who you are.',
+      include: { name: true, email: true, phone: true, company: true, lastMessage: true, page: false, refCode: true }
+    };
+    function populateHandover(cfg) {
+      const h = cfg.draft?.handover || cfg.handover || {};
+      const linksNumber = cfg.draft?.links?.whatsappRefNumber || cfg.links?.whatsappRefNumber || '';
+      document.getElementById('hoEnabled').checked = h.enabled !== false;
+      document.getElementById('hoNumber').value = h.whatsappNumber || '';
+      document.getElementById('hoNumber').placeholder = linksNumber || '+91 98765 43210';
+      document.getElementById('hoNumberHint').textContent = linksNumber ? `Leave empty to use ${linksNumber} from Settings.` : 'Required — no WhatsApp number is set in Settings.';
+      document.getElementById('hoHeaderButton').checked = h.showHeaderButton !== false;
+      document.getElementById('hoOnUnsure').checked = h.triggers?.onUnsure !== false;
+      document.getElementById('hoOnFrustration').checked = h.triggers?.onFrustration !== false;
+      document.getElementById('hoCollectFirst').checked = !!h.collectDetailsFirst;
+      document.getElementById('hoDetailsMessage').value = h.detailsMessage || HANDOVER_DEFAULTS.detailsMessage;
+      document.getElementById('hoMessage').value = h.message || HANDOVER_DEFAULTS.message;
+      document.getElementById('hoButtonLabel').value = h.buttonLabel || HANDOVER_DEFAULTS.buttonLabel;
+      document.getElementById('hoGreeting').value = h.greeting || HANDOVER_DEFAULTS.greeting;
+      const include = { ...HANDOVER_DEFAULTS.include, ...(h.include || {}) };
+      document.querySelectorAll('[data-ho-include]').forEach(box => { box.checked = !!include[box.dataset.hoInclude]; });
+      document.querySelectorAll('#tab-handover input').forEach(input => { input.oninput = updateHandoverPreview; input.onchange = updateHandoverPreview; });
+      updateHandoverPreview();
+    }
+    function collectHandover() {
+      const include = {};
+      document.querySelectorAll('[data-ho-include]').forEach(box => { include[box.dataset.hoInclude] = box.checked; });
+      return {
+        enabled: document.getElementById('hoEnabled').checked,
+        whatsappNumber: document.getElementById('hoNumber').value.trim(),
+        showHeaderButton: document.getElementById('hoHeaderButton').checked,
+        triggers: { onUnsure: document.getElementById('hoOnUnsure').checked, onFrustration: document.getElementById('hoOnFrustration').checked },
+        collectDetailsFirst: document.getElementById('hoCollectFirst').checked,
+        detailsMessage: document.getElementById('hoDetailsMessage').value.trim(),
+        message: document.getElementById('hoMessage').value.trim(),
+        buttonLabel: document.getElementById('hoButtonLabel').value.trim(),
+        greeting: document.getElementById('hoGreeting').value.trim(),
+        include
+      };
+    }
+    function handoverNumberDigits(h) {
+      const fallback = currentConfig?.draft?.links?.whatsappRefNumber || currentConfig?.links?.whatsappRefNumber || '';
+      return String(h.whatsappNumber || fallback).replace(/\D/g, '');
+    }
+    function updateHandoverPreview() {
+      const h = collectHandover();
+      const brand = currentConfig?.branding?.brandName || 'GrapeLabs';
+      const lines = [(h.greeting || HANDOVER_DEFAULTS.greeting).replace(/\{brand\}/g, brand)];
+      const details = [];
+      if (h.include.name) details.push('Name: Ravi Kumar');
+      if (h.include.email) details.push('Email: ravi@acme.com');
+      if (h.include.phone) details.push('Phone: +919812345678');
+      if (h.include.company) details.push('Company: Acme Retail');
+      if (details.length) lines.push('', ...details);
+      if (h.include.lastMessage) lines.push('', 'My question: Can you connect our Shopify store to WhatsApp order updates?');
+      if (h.include.page) lines.push('Page: https://yoursite.com/pricing');
+      if (h.include.refCode) lines.push('', 'Ref: K7Q2');
+      const text = lines.join('\n');
+      document.getElementById('hoPreview').textContent = text;
+      const digits = handoverNumberDigits(h);
+      const link = document.getElementById('hoTestLink');
+      const valid = digits.length >= 11 && digits.length <= 15;
+      link.href = valid ? `https://wa.me/${digits}?text=${encodeURIComponent(text)}` : '#';
+      link.style.opacity = valid ? '1' : '.5';
+      document.getElementById('hoStatus').textContent = valid ? `Sends to +${digits}` : (digits.length >= 8 ? 'Add the country code (e.g. +91) \u2014 WhatsApp links need it.' : 'Add a WhatsApp number to enable handover.');
+    }
+    async function saveHandover() {
+      const handover = collectHandover();
+      const digits = handoverNumberDigits(handover);
+      if (handover.enabled && (digits.length < 11 || digits.length > 15)) return alert('Enter the WhatsApp number with its country code, e.g. +91 87082 95706. WhatsApp links don\u2019t work without it.');
+      const response = await fetch(`${API_BASE}/api/config/draft`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ clientId: 'grapelabs', draft: { handover } }) });
+      const data = await response.json();
+      if (!response.ok || !data.success) return alert(data.error || 'Could not save handover settings.');
+      currentConfig = data.config;
+      alert('Handover settings saved to Draft. Publish changes when ready.');
+    }
+
+    // Assistant personality
+    const PERSONALITY_PRESETS = {
+      consultant: { label: 'Friendly consultant', hint: 'Warm, practical, confident', traits: ['friendly', 'practical', 'confident', 'consultative'], formality: 2, energy: 3, detail: 2, humour: 2, empathy: 3, emoji: 'none', formatting: 'bullets', maxSentences: 5, description: 'A friendly expert who listens first, then gives practical, confident advice without jargon.' },
+      professional: { label: 'Professional advisor', hint: 'Polished, precise, calm', traits: ['professional', 'precise', 'trustworthy', 'calm'], formality: 4, energy: 2, detail: 3, humour: 1, empathy: 3, emoji: 'none', formatting: 'bullets', maxSentences: 6, description: 'A polished advisor who is precise, measured and trustworthy.' },
+      playful: { label: 'Playful & upbeat', hint: 'Fun, energetic, emoji', traits: ['playful', 'upbeat', 'witty', 'approachable'], formality: 1, energy: 5, detail: 2, humour: 4, empathy: 3, emoji: 'frequent', formatting: 'prose', maxSentences: 4, description: 'A cheerful, witty guide who keeps things light and fun while still being genuinely helpful.' },
+      concise: { label: 'Concise expert', hint: 'Short, direct answers', traits: ['direct', 'knowledgeable', 'efficient'], formality: 3, energy: 2, detail: 1, humour: 1, empathy: 2, emoji: 'none', formatting: 'bullets', maxSentences: 3, description: 'A no-nonsense expert who gives the answer first, in as few words as possible.' },
+      concierge: { label: 'Luxury concierge', hint: 'Gracious, refined, attentive', traits: ['gracious', 'attentive', 'refined', 'discreet'], formality: 5, energy: 2, detail: 3, humour: 1, empathy: 4, emoji: 'none', formatting: 'prose', maxSentences: 5, description: 'A gracious concierge offering attentive, refined, personal service.' },
+      caring: { label: 'Warm & caring', hint: 'Patient, reassuring', traits: ['warm', 'patient', 'reassuring', 'kind'], formality: 2, energy: 3, detail: 3, humour: 1, empathy: 5, emoji: 'occasional', formatting: 'prose', maxSentences: 5, description: 'A patient, caring helper who reassures people and explains things gently.' }
+    };
+    const PERSONALITY_SLIDERS = [
+      ['formality', 'Formality', 'Casual', 'Formal', ['Very casual', 'Casual', 'Balanced', 'Professional', 'Formal']],
+      ['energy', 'Energy', 'Calm', 'Enthusiastic', ['Calm', 'Steady', 'Positive', 'Upbeat', 'Very excited']],
+      ['detail', 'Detail', 'Brief', 'Detailed', ['Very brief', 'Concise', 'Moderate', 'Thorough', 'Detailed']],
+      ['humour', 'Humour', 'None', 'Playful', ['None', 'Rare', 'Light', 'Witty', 'Very playful']],
+      ['empathy', 'Empathy', 'Neutral', 'Very warm', ['Neutral', 'Polite', 'Warm', 'Very warm', 'Deeply caring']]
+    ];
+    const TRAIT_SUGGESTIONS = ['friendly', 'confident', 'practical', 'professional', 'witty', 'warm', 'direct', 'patient', 'enthusiastic', 'calm', 'expert', 'empathetic', 'playful', 'trustworthy', 'bold', 'humble'];
+    let personalityExamples = [];
+    let activePreset = 'custom';
+
+    function renderPersonalitySliders(values) {
+      document.getElementById('persSliders').innerHTML = PERSONALITY_SLIDERS.map(([key, label, low, high, names]) => `<div class="pers-slider"><label class="form-label" for="pers_${key}">${label}</label><div><input type="range" min="1" max="5" step="1" id="pers_${key}" value="${values[key] || 3}"><div class="pers-slider-ends"><span>${low}</span><span>${high}</span></div></div><output id="pers_${key}_out">${names[(values[key] || 3) - 1]}</output></div>`).join('');
+      PERSONALITY_SLIDERS.forEach(([key, , , , names]) => {
+        const input = document.getElementById(`pers_${key}`);
+        input.addEventListener('input', () => { document.getElementById(`pers_${key}_out`).textContent = names[input.value - 1]; markCustomPreset(); });
+      });
+    }
+    function renderPresets() {
+      document.getElementById('persPresets').innerHTML = Object.entries(PERSONALITY_PRESETS).map(([id, preset]) => `<button type="button" class="pers-preset ${activePreset === id ? 'active' : ''}" onclick="applyPersonalityPreset('${id}')"><strong>${preset.label}</strong><small>${preset.hint}</small></button>`).join('');
+    }
+    function markCustomPreset() { if (activePreset !== 'custom') { activePreset = 'custom'; renderPresets(); } }
+    function renderTraitSuggestions() {
+      const current = document.getElementById('persTraits').value.split(',').map(t => t.trim().toLowerCase()).filter(Boolean);
+      document.getElementById('persTraitSuggestions').innerHTML = TRAIT_SUGGESTIONS.map(t => `<button type="button" class="pers-trait ${current.includes(t) ? 'on' : ''}" onclick="togglePersonalityTrait('${t}')">${t}</button>`).join('');
+    }
+    function togglePersonalityTrait(trait) {
+      const input = document.getElementById('persTraits');
+      const current = input.value.split(',').map(t => t.trim()).filter(Boolean);
+      const exists = current.some(t => t.toLowerCase() === trait);
+      input.value = (exists ? current.filter(t => t.toLowerCase() !== trait) : [...current, trait]).join(', ');
+      renderTraitSuggestions();
+      markCustomPreset();
+    }
+    function applyPersonalityPreset(id) {
+      const preset = PERSONALITY_PRESETS[id];
+      if (!preset) return;
+      activePreset = id;
+      document.getElementById('persDescription').value = preset.description;
+      document.getElementById('persTraits').value = preset.traits.join(', ');
+      document.getElementById('persEmoji').value = preset.emoji;
+      document.getElementById('persFormatting').value = preset.formatting;
+      document.getElementById('persMaxSentences').value = preset.maxSentences;
+      renderPersonalitySliders(preset);
+      renderTraitSuggestions();
+      renderPresets();
+    }
+    function populatePersonality(cfg) {
+      const p = cfg.draft?.personality || cfg.personality || {};
+      activePreset = p.preset || 'custom';
+      document.getElementById('persEnabled').checked = p.enabled !== false;
+      document.getElementById('persName').value = p.assistantName || '';
+      document.getElementById('persRole').value = p.role || '';
+      document.getElementById('persPerspective').value = p.perspective === 'i' ? 'i' : 'we';
+      document.getElementById('persShowName').checked = p.showNameInHeader !== false;
+      document.getElementById('persDescription').value = p.description || '';
+      document.getElementById('persTraits').value = (p.traits || []).join(', ');
+      document.getElementById('persEmoji').value = p.emoji || 'none';
+      document.getElementById('persFormatting').value = p.formatting || 'bullets';
+      document.getElementById('persMaxSentences').value = p.maxSentences || 5;
+      document.getElementById('persUseName').checked = p.useVisitorName !== false;
+      document.getElementById('persLanguage').value = p.language || 'English';
+      document.getElementById('persMirror').checked = !!p.mirrorLanguage;
+      document.getElementById('persHinglish').checked = p.hinglish !== false;
+      document.getElementById('persOffTopic').value = p.offTopic || 'redirect';
+      document.getElementById('persDo').value = (p.doRules || []).join('\n');
+      document.getElementById('persDont').value = (p.dontRules || []).join('\n');
+      document.getElementById('persPreferred').value = p.preferredWords || '';
+      document.getElementById('persAvoid').value = p.avoidWords || '';
+      document.getElementById('persBrandVoice').value = cfg.draft?.brandVoice ?? cfg.brandVoice ?? '';
+      renderPersonalitySliders({ formality: p.formality || 3, energy: p.energy || 3, detail: p.detail || 2, humour: p.humour || 1, empathy: p.empathy || 3 });
+      renderPersonalityExamples(p.examples || []);
+      renderTraitSuggestions();
+      renderPresets();
+      ['persDescription', 'persEmoji', 'persFormatting', 'persMaxSentences'].forEach(id => document.getElementById(id).oninput = markCustomPreset);
+      document.getElementById('persTraits').oninput = () => { renderTraitSuggestions(); markCustomPreset(); };
+    }
+    function renderPersonalityExamples(examples) {
+      personalityExamples = (examples || []).map(e => ({ visitor: e.visitor || '', reply: e.reply || '' }));
+      document.getElementById('persExamples').innerHTML = personalityExamples.length ? personalityExamples.map((e, i) => `<section class="quiz-question-card" data-pe-index="${i}"><div class="quiz-question-head"><span>Example ${i + 1}</span><button class="lead-delete-btn" type="button" onclick="deletePersonalityExample(${i})">Delete</button></div><div class="form-grid"><label class="form-group"><span class="form-label">Visitor says</span><textarea class="form-control" data-pe-field="visitor" maxlength="300" style="min-height:70px">${escapeLeadCell(e.visitor)}</textarea></label><label class="form-group"><span class="form-label">Ideal reply</span><textarea class="form-control" data-pe-field="reply" maxlength="800" style="min-height:70px">${escapeLeadCell(e.reply)}</textarea></label></div></section>`).join('') : '<p style="font-size:13px;color:#777;margin:10px 0">No examples yet.</p>';
+      document.querySelectorAll('[data-pe-field]').forEach(input => input.addEventListener('input', () => {
+        personalityExamples[Number(input.closest('[data-pe-index]').dataset.peIndex)][input.dataset.peField] = input.value;
+      }));
+    }
+    function addPersonalityExample() {
+      if (personalityExamples.length >= 5) return alert('You can add up to 5 examples.');
+      personalityExamples.push({ visitor: '', reply: '' });
+      renderPersonalityExamples(personalityExamples);
+    }
+    function deletePersonalityExample(index) {
+      personalityExamples.splice(index, 1);
+      renderPersonalityExamples(personalityExamples);
+    }
+    function collectPersonality() {
+      const lines = id => document.getElementById(id).value.split(/\r?\n/).map(v => v.trim()).filter(Boolean);
+      const slider = key => Number(document.getElementById(`pers_${key}`).value) || 3;
+      return {
+        enabled: document.getElementById('persEnabled').checked,
+        preset: activePreset,
+        assistantName: document.getElementById('persName').value.trim(),
+        role: document.getElementById('persRole').value.trim(),
+        perspective: document.getElementById('persPerspective').value,
+        showNameInHeader: document.getElementById('persShowName').checked,
+        description: document.getElementById('persDescription').value.trim(),
+        traits: document.getElementById('persTraits').value.split(',').map(t => t.trim()).filter(Boolean).slice(0, 10),
+        formality: slider('formality'), energy: slider('energy'), detail: slider('detail'), humour: slider('humour'), empathy: slider('empathy'),
+        emoji: document.getElementById('persEmoji').value,
+        formatting: document.getElementById('persFormatting').value,
+        maxSentences: Math.max(1, Math.min(15, Number(document.getElementById('persMaxSentences').value) || 5)),
+        useVisitorName: document.getElementById('persUseName').checked,
+        language: document.getElementById('persLanguage').value.trim() || 'English',
+        mirrorLanguage: document.getElementById('persMirror').checked,
+        hinglish: document.getElementById('persHinglish').checked,
+        offTopic: document.getElementById('persOffTopic').value,
+        doRules: lines('persDo').slice(0, 12),
+        dontRules: lines('persDont').slice(0, 12),
+        preferredWords: document.getElementById('persPreferred').value.trim(),
+        avoidWords: document.getElementById('persAvoid').value.trim(),
+        examples: personalityExamples.map(e => ({ visitor: e.visitor.trim(), reply: e.reply.trim() })).filter(e => e.visitor && e.reply)
+      };
+    }
+    async function savePersonality() {
+      const personality = collectPersonality();
+      const incomplete = personalityExamples.some(e => (e.visitor.trim() && !e.reply.trim()) || (!e.visitor.trim() && e.reply.trim()));
+      if (incomplete) return alert('Each example needs both what the visitor says and the ideal reply.');
+      const response = await fetch(`${API_BASE}/api/config/draft`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ clientId: 'grapelabs', draft: { personality, brandVoice: document.getElementById('persBrandVoice').value } }) });
+      const data = await response.json();
+      if (!response.ok || !data.success) return alert(data.error || 'Could not save personality settings.');
+      currentConfig = data.config;
+      alert('Personality saved to Draft. Publish changes when ready.');
+    }
+    async function requestPersonalityPreview(message) {
+      const response = await fetch(`${API_BASE}/api/config/personality/preview`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ clientId: 'grapelabs', personality: collectPersonality(), brandVoice: document.getElementById('persBrandVoice').value, message }) });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok || !data.success) throw new Error(data.error || 'Preview is unavailable. Restart the API server if you just updated it.');
+      return data;
+    }
+    async function testPersonality() {
+      const button = document.getElementById('persTestButton');
+      const status = document.getElementById('persTestStatus');
+      const chat = document.getElementById('persChat');
+      const message = document.getElementById('persTestMessage').value.trim();
+      if (!message) return;
+      button.disabled = true; status.textContent = 'Generating a reply…';
+      try {
+        const data = await requestPersonalityPreview(message);
+        if (!data.reply) { status.textContent = data.error || 'No reply.'; return; }
+        chat.style.display = 'flex';
+        chat.insertAdjacentHTML('beforeend', `<div class="pers-bubble user">${escapeLeadCell(message)}</div><div class="pers-bubble bot">${escapeLeadCell(data.reply)}</div>`);
+        status.textContent = 'Preview only — save and publish to apply it to the live bot.';
+      } catch (error) { status.textContent = error.message; }
+      finally { button.disabled = false; }
+    }
+    async function showPersonalityInstructions() {
+      const box = document.getElementById('persInstructions');
+      if (box.style.display === 'block') { box.style.display = 'none'; return; }
+      try {
+        const data = await requestPersonalityPreview('');
+        box.textContent = data.instructions || 'No instructions.';
+        box.style.display = 'block';
+      } catch (error) { document.getElementById('persTestStatus').textContent = error.message; }
+    }
+
+    // Lead capture
+    const LEAD_FIELDS = [['name', 'Name'], ['email', 'Email'], ['phone', 'Phone / WhatsApp'], ['company', 'Company'], ['website', 'Website'], ['industry', 'Industry'], ['team_size', 'Team size'], ['custom', 'Other (new Leads column)']];
+    const LEAD_TYPES = [['text', 'Short text'], ['email', 'Email'], ['phone', 'Phone'], ['select', 'Choice list'], ['textarea', 'Long text']];
+    let leadQuestions = [];
+    let leadResources = [];
+
+    async function loadLeadCaptureSettings() {
+      let lc = null;
+      try {
+        const response = await fetch(`${API_BASE}/api/lead-capture/admin?clientId=grapelabs`);
+        const data = await response.json();
+        if (!data.success) throw new Error(data.error);
+        lc = data.leadCapture || {};
+        document.getElementById('lcStatus').textContent = '';
+      } catch (error) {
+        // Older API process without the lead capture endpoints: still show the saved settings.
+        lc = currentConfig?.draft?.leadCapture || currentConfig?.leadCapture || {};
+        document.getElementById('lcStatus').textContent = 'The API server is running an older version. Restart it (or redeploy) so links can be saved and shared.';
+      }
+      try {
+        document.getElementById('lcEnabled').checked = lc.enabled !== false;
+        document.getElementById('lcMode').value = lc.mode || 'both';
+        document.getElementById('lcStyle').value = lc.style || 'form';
+        document.getElementById('lcAfterExchanges').value = lc.afterExchanges || 3;
+        document.getElementById('lcQuestionsPerAsk').value = lc.questionsPerAsk || 3;
+        document.getElementById('lcRepeatAfter').value = lc.repeatAfterExchanges || 5;
+        document.getElementById('lcMaxAsks').value = lc.maxAsksPerSession || 2;
+        document.getElementById('lcIntro').value = lc.introMessage || '';
+        document.getElementById('lcGateMessage').value = lc.gateMessage || '';
+        document.getElementById('lcThankYou').value = lc.thankYouMessage || '';
+        document.getElementById('lcConsent').value = lc.consentText || '';
+        renderLeadQuestionEditor(lc.questions || []);
+        renderLeadResourceEditor(lc.resources || []);
+        updateLeadCaptureModeHint();
+      } catch (error) {
+        document.getElementById('lcStatus').textContent = 'Could not show lead capture settings.';
+      }
+    }
+
+    function updateLeadCaptureModeHint() {
+      const mode = document.getElementById('lcMode').value;
+      document.getElementById('lcChatConditions').style.opacity = mode === 'gated' ? '.45' : '1';
+      document.getElementById('lcResourcesCard').style.opacity = mode === 'questions' ? '.45' : '1';
+    }
+
+    function renderLeadQuestionEditor(questions) {
+      leadQuestions = (questions || []).map((q, i) => ({
+        id: q.id || `q_${Date.now()}_${i}`, question: q.question || '', label: q.label || '', field: q.field || 'custom', type: q.type || 'text',
+        required: q.required !== false, enabled: q.enabled !== false, placeholder: q.placeholder || '', options: Array.isArray(q.options) ? q.options : []
+      }));
+      const enabled = leadQuestions.filter(q => q.enabled).length;
+      document.getElementById('lcQuestionCount').textContent = `${enabled} of ${leadQuestions.length} in use`;
+      const editor = document.getElementById('lcQuestionEditor');
+      editor.innerHTML = leadQuestions.map((q, i) => `<section class="quiz-question-card" data-lq-index="${i}">
+        <div class="quiz-question-head"><span>Question ${i + 1}${q.required ? ' · required' : ''}</span><div class="quiz-question-actions"><label class="form-label" style="margin:0 6px 0 0"><input type="checkbox" data-lq-field="enabled" ${q.enabled ? 'checked' : ''}> Use</label><label class="form-label" style="margin:0 8px 0 0"><input type="checkbox" data-lq-field="required" ${q.required ? 'checked' : ''}> Required</label><button class="btn btn-secondary" type="button" aria-label="Move up" onclick="moveLeadQuestion(${i},-1)" ${i === 0 ? 'disabled' : ''}>↑</button><button class="btn btn-secondary" type="button" aria-label="Move down" onclick="moveLeadQuestion(${i},1)" ${i === leadQuestions.length - 1 ? 'disabled' : ''}>↓</button><button class="lead-delete-btn" type="button" onclick="deleteLeadQuestion(${i})">Delete</button></div></div>
+        <div class="form-grid">
+          <label class="form-group" style="grid-column:1/-1"><span class="form-label">Question (shown one at a time, or as the form hint)</span><input class="form-control" data-lq-field="question" maxlength="200" value="${escapeLeadCell(q.question)}" placeholder="What is your email address?"></label>
+          <label class="form-group"><span class="form-label">Short form label</span><input class="form-control" data-lq-field="label" maxlength="60" value="${escapeLeadCell(q.label)}" placeholder="e.g. Work email"></label>
+          <label class="form-group"><span class="form-label">Save answer as</span><select class="form-control" data-lq-field="field">${LEAD_FIELDS.map(([v, l]) => `<option value="${v}" ${q.field === v ? 'selected' : ''}>${l}</option>`).join('')}</select></label>
+          <label class="form-group"><span class="form-label">Answer type</span><select class="form-control" data-lq-field="type">${LEAD_TYPES.map(([v, l]) => `<option value="${v}" ${q.type === v ? 'selected' : ''}>${l}</option>`).join('')}</select></label>
+          <label class="form-group"><span class="form-label">Placeholder (optional)</span><input class="form-control" data-lq-field="placeholder" maxlength="80" value="${escapeLeadCell(q.placeholder)}"></label>
+          <label class="form-group" style="grid-column:1/-1;${q.type === 'select' ? '' : 'display:none'}"><span class="form-label">Choices (one per line)</span><textarea class="form-control" data-lq-field="options" style="min-height:70px">${escapeLeadCell(q.options.join('\n'))}</textarea></label>
+        </div></section>`).join('');
+      editor.querySelectorAll('[data-lq-field]').forEach(input => input.addEventListener(input.tagName === 'SELECT' || input.type === 'checkbox' ? 'change' : 'input', () => {
+        const q = leadQuestions[Number(input.closest('[data-lq-index]').dataset.lqIndex)];
+        const key = input.dataset.lqField;
+        q[key] = input.type === 'checkbox' ? input.checked : key === 'options' ? input.value.split(/\r?\n/).map(v => v.trim()).filter(Boolean) : input.value;
+        if (key === 'field' && ['email', 'phone'].includes(q.field)) q.type = q.field;
+        if (['type', 'field', 'enabled', 'required'].includes(key)) { renderLeadQuestionEditor(leadQuestions); renderLeadResourceEditor(leadResources); }
+      }));
+    }
+    function addLeadQuestion() {
+      leadQuestions.push({ id: `q_${Date.now().toString(36)}`, question: '', label: '', field: 'custom', type: 'text', required: false, enabled: true, placeholder: '', options: [] });
+      renderLeadQuestionEditor(leadQuestions);
+      renderLeadResourceEditor(leadResources);
+    }
+    function deleteLeadQuestion(index) {
+      const [removed] = leadQuestions.splice(index, 1);
+      leadResources.forEach(r => { r.requiredQuestionIds = (r.requiredQuestionIds || []).filter(id => id !== removed?.id); });
+      renderLeadQuestionEditor(leadQuestions);
+      renderLeadResourceEditor(leadResources);
+    }
+    function moveLeadQuestion(index, direction) {
+      const next = index + direction;
+      if (next < 0 || next >= leadQuestions.length) return;
+      [leadQuestions[index], leadQuestions[next]] = [leadQuestions[next], leadQuestions[index]];
+      renderLeadQuestionEditor(leadQuestions);
+    }
+
+    function renderLeadResourceEditor(resources) {
+      leadResources = (resources || []).map((r, i) => ({
+        id: r.id || `resource_${Date.now()}_${i}`, title: r.title || '', description: r.description || '',
+        keywords: Array.isArray(r.keywords) ? r.keywords.join(', ') : (r.keywords || ''), source: r.source === 'file' && r.file && !r.linkUrl ? 'file' : 'link',
+        file: r.file || null, linkUrl: r.linkUrl || '', requiredQuestionIds: Array.isArray(r.requiredQuestionIds) ? r.requiredQuestionIds : leadQuestions.filter(q => q.required).map(q => q.id),
+        showAsQuickAction: !!r.showAsQuickAction, enabled: r.enabled !== false
+      }));
+      const usable = leadQuestions.filter(q => q.enabled && q.question);
+      const editor = document.getElementById('lcResourceEditor');
+      editor.innerHTML = leadResources.length ? leadResources.map((r, i) => `<section class="catalog-item" data-lr-index="${i}">
+        <div class="catalog-item-head"><strong>${escapeLeadCell(r.title || `Resource ${i + 1}`)}</strong><div style="display:flex;align-items:center;gap:14px"><label class="form-label"><input type="checkbox" data-lr-field="enabled" ${r.enabled ? 'checked' : ''}> Active</label><button class="lead-delete-btn" type="button" onclick="deleteLeadResource(${i})">Delete</button></div></div>
+        <div class="form-grid">
+          <label class="form-group"><span class="form-label">Title</span><input class="form-control" data-lr-field="title" maxlength="80" value="${escapeLeadCell(r.title)}" placeholder="Product brochure"></label>
+          <label class="form-group"><span class="form-label">Trigger words (comma-separated)</span><input class="form-control" data-lr-field="keywords" value="${escapeLeadCell(r.keywords)}" placeholder="brochure, catalogue, pdf"></label>
+          <label class="form-group" style="grid-column:1/-1"><span class="form-label">Short description (shown with the link)</span><input class="form-control" data-lr-field="description" maxlength="200" value="${escapeLeadCell(r.description)}"></label>
+          <label class="form-group" style="grid-column:1/-1"><span class="form-label">Link (doc, PDF, Drive file, video — anything)</span><input class="form-control" type="url" data-lr-field="linkUrl" value="${escapeLeadCell(r.linkUrl)}" placeholder="https://drive.google.com/file/d/…  or  https://yoursite.com/brochure.pdf">${!r.linkUrl && r.file ? `<small style="font-size:11px;color:#777">Currently using an uploaded file (${escapeLeadCell(r.file.fileName)}). Paste a link to replace it.</small>` : ''}</label>
+          <div class="form-group" style="grid-column:1/-1"><span class="form-label">Details required before access</span><span style="display:flex;flex-wrap:wrap;gap:6px 16px">${usable.length ? usable.map(q => `<label><input type="checkbox" data-lr-required="${escapeLeadCell(q.id)}" ${r.requiredQuestionIds.includes(q.id) ? 'checked' : ''}> ${escapeLeadCell(q.label || q.question)}</label>`).join('') : '<span style="color:#a52f2f">Add at least one question above.</span>'}</span></div>
+          <label class="form-group"><span class="form-label">Quick action</span><span><input type="checkbox" data-lr-field="showAsQuickAction" ${r.showAsQuickAction ? 'checked' : ''}> Show as a button on the welcome screen</span></label>
+        </div></section>`).join('') : '<p style="font-size:13px;color:#777;margin:12px 0">No resources yet.</p>';
+      editor.querySelectorAll('[data-lr-field]').forEach(input => input.addEventListener(input.type === 'checkbox' || input.type === 'radio' ? 'change' : 'input', () => {
+        const r = leadResources[Number(input.closest('[data-lr-index]').dataset.lrIndex)];
+        r[input.dataset.lrField] = input.type === 'checkbox' ? input.checked : input.value;
+        if (input.type === 'radio') renderLeadResourceEditor(leadResources);
+      }));
+      editor.querySelectorAll('[data-lr-required]').forEach(input => input.addEventListener('change', () => {
+        const r = leadResources[Number(input.closest('[data-lr-index]').dataset.lrIndex)];
+        const id = input.dataset.lrRequired;
+        r.requiredQuestionIds = input.checked ? [...new Set([...r.requiredQuestionIds, id])] : r.requiredQuestionIds.filter(item => item !== id);
+      }));
+    }
+    function addLeadResource() {
+      leadResources.push({ id: `resource_${Date.now().toString(36)}`, title: '', description: '', keywords: '', source: 'link', file: null, linkUrl: '', requiredQuestionIds: leadQuestions.filter(q => q.enabled && q.required).map(q => q.id), showAsQuickAction: false, enabled: true });
+      renderLeadResourceEditor(leadResources);
+    }
+    function deleteLeadResource(index) {
+      if (!confirm(`Delete ${leadResources[index]?.title || 'this resource'}?`)) return;
+      leadResources.splice(index, 1);
+      renderLeadResourceEditor(leadResources);
+    }
+    async function uploadLeadResourceFile(index, file) {
+      const status = document.getElementById('lcStatus');
+      if (!file) return;
+      if (file.size > 3 * 1024 * 1024) { status.textContent = 'Files can be up to 3 MB. Use a link for larger files.'; return; }
+      status.textContent = `Uploading ${file.name}…`;
+      try {
+        const base64 = await new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(String(reader.result).split(',')[1] || '');
+          reader.onerror = () => reject(new Error('Could not read the file.'));
+          reader.readAsDataURL(file);
+        });
+        const response = await fetch(`${API_BASE}/api/lead-capture/upload`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ clientId: 'grapelabs', fileName: file.name, mimeType: file.type, base64 }) });
+        const data = await response.json();
+        if (!response.ok || !data.success) throw new Error(data.error || 'Upload failed.');
+        leadResources[index].file = data.file;
+        if (!leadResources[index].title) leadResources[index].title = file.name.replace(/\.[^.]+$/, '').replace(/[-_]+/g, ' ');
+        renderLeadResourceEditor(leadResources);
+        status.textContent = `${file.name} uploaded. Save to Draft, then publish.`;
+      } catch (error) { status.textContent = error.message; }
+    }
+
+    async function saveLeadCaptureSettings() {
+      const questions = leadQuestions.map(q => ({ ...q, question: q.question.trim(), label: q.label.trim() }));
+      const bad = questions.find(q => q.enabled && (!q.question || (q.type === 'select' && q.options.length < 2)));
+      if (bad) return alert(bad.question ? `“${bad.question}” needs at least two choices.` : 'Every question in use needs wording.');
+      const resources = leadResources.map(r => ({
+        ...r, title: r.title.trim(), description: r.description.trim(), linkUrl: String(r.linkUrl || '').trim(),
+        source: String(r.linkUrl || '').trim() || !r.file ? 'link' : 'file',
+        keywords: String(r.keywords).split(',').map(k => k.trim().toLowerCase()).filter(Boolean).slice(0, 20)
+      }));
+      const badResource = resources.find(r => r.enabled && (!r.title || (r.source === 'file' ? !r.file : !/^https?:\/\//i.test(r.linkUrl))));
+      if (badResource) return alert(`“${badResource.title || 'A resource'}” needs a title and a link starting with https://`);
+      const leadCapture = {
+        enabled: document.getElementById('lcEnabled').checked,
+        mode: document.getElementById('lcMode').value,
+        style: document.getElementById('lcStyle').value,
+        afterExchanges: Math.max(1, Math.min(50, Number(document.getElementById('lcAfterExchanges').value) || 3)),
+        questionsPerAsk: Math.max(1, Math.min(10, Number(document.getElementById('lcQuestionsPerAsk').value) || 3)),
+        repeatAfterExchanges: Math.max(1, Math.min(50, Number(document.getElementById('lcRepeatAfter').value) || 5)),
+        maxAsksPerSession: Math.max(1, Math.min(10, Number(document.getElementById('lcMaxAsks').value) || 2)),
+        introMessage: document.getElementById('lcIntro').value.trim(),
+        gateMessage: document.getElementById('lcGateMessage').value.trim(),
+        thankYouMessage: document.getElementById('lcThankYou').value.trim(),
+        consentText: document.getElementById('lcConsent').value.trim(),
+        questions,
+        resources
+      };
+      const response = await fetch(`${API_BASE}/api/config/draft`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ clientId: 'grapelabs', draft: { leadCapture } }) });
+      const data = await response.json();
+      if (!response.ok || !data.success) return alert(data.error || 'Could not save lead capture settings.');
+      currentConfig = data.config;
+      document.getElementById('lcStatus').textContent = 'Saved to Draft. Publish changes when ready.';
+      alert('Lead capture settings saved to Draft. Publish changes when ready.');
+    }
+
+    // Conversation starters, quick actions & recommendations
+    const QUICK_ACTION_TYPES = [
+      ['message', 'Send a message'], ['recommend', 'Recommend for me'], ['quiz', 'Start discovery quiz'],
+      ['booking', 'Book a call'], ['human', 'Contact support'], ['whatsapp', 'Continue on WhatsApp'],
+      ['tryit', 'Try it on my business'], ['link', 'Open link'], ['resource', 'Share a gated resource (Value = resource ID)']
+    ];
+    const DEFAULT_QUICK_ACTIONS = [
+      { id: 'recommend', label: 'Recommend for me', type: 'recommend', value: '', enabled: true },
+      { id: 'products', label: 'Browse products', type: 'message', value: 'What products do you offer?', enabled: true },
+      { id: 'book', label: 'Book a call', type: 'booking', value: 'I would like to book a call', enabled: true },
+      { id: 'support', label: 'Contact support', type: 'human', value: 'I would like to talk to someone from your team', enabled: true }
+    ];
+    let quickActions = [];
+
+    function populateEngagementUI(cfg) {
+      const qa = cfg.draft?.quickActions || cfg.quickActions || {};
+      document.getElementById('qaEnabled').checked = qa.enabled !== false;
+      document.getElementById('qaShowInChat').checked = qa.showInChat !== false;
+      document.getElementById('qaShowInTeaser').checked = qa.showInTeaser !== false;
+      document.getElementById('qaMaxStarters').value = qa.maxStarters || 3;
+      document.getElementById('qaStarters').value = (qa.starters || []).join('\n');
+      renderQuickActionEditor(Array.isArray(qa.actions) ? qa.actions : DEFAULT_QUICK_ACTIONS);
+      const reco = cfg.draft?.recommendations || cfg.recommendations || {};
+      document.getElementById('recoEnabled').checked = reco.enabled !== false;
+      document.getElementById('recoShowOnWelcome').checked = reco.showOnWelcome !== false;
+      document.getElementById('recoShowReasons').checked = reco.showReasons !== false;
+      document.getElementById('recoMaxItems').value = reco.maxItems || 3;
+    }
+
+    function renderQuickActionEditor(actions) {
+      quickActions = (actions || []).map((action, index) => ({
+        id: action.id || `action_${index + 1}`, label: action.label || '', type: action.type || 'message',
+        value: action.value || '', enabled: action.enabled !== false
+      }));
+      const editor = document.getElementById('quickActionEditor');
+      editor.innerHTML = quickActions.map((action, index) => `<section class="quiz-question-card" data-action-index="${index}">
+        <div class="quiz-question-head"><span>${escapeLeadCell(action.label || `Action ${index + 1}`)}</span><div class="quiz-question-actions"><label class="form-label" style="margin:0 8px 0 0"><input type="checkbox" data-action-field="enabled" ${action.enabled ? 'checked' : ''}> Show</label><button class="btn btn-secondary" type="button" aria-label="Move up" onclick="moveQuickAction(${index},-1)" ${index === 0 ? 'disabled' : ''}>↑</button><button class="btn btn-secondary" type="button" aria-label="Move down" onclick="moveQuickAction(${index},1)" ${index === quickActions.length - 1 ? 'disabled' : ''}>↓</button><button class="lead-delete-btn" type="button" onclick="deleteQuickAction(${index})">Delete</button></div></div>
+        <div class="form-grid"><label class="form-group"><span class="form-label">Button label</span><input class="form-control" data-action-field="label" maxlength="40" value="${escapeLeadCell(action.label)}" placeholder="Browse products"></label>
+        <label class="form-group"><span class="form-label">Action</span><select class="form-control" data-action-field="type">${QUICK_ACTION_TYPES.map(([value, label]) => `<option value="${value}" ${action.type === value ? 'selected' : ''}>${label}</option>`).join('')}</select></label>
+        <label class="form-group" style="grid-column:1/-1"><span class="form-label">Value (message to send or URL to open; optional for other actions)</span><input class="form-control" data-action-field="value" value="${escapeLeadCell(action.value)}" placeholder="What products do you offer?"></label></div></section>`).join('');
+      editor.querySelectorAll('[data-action-field]').forEach(input => input.addEventListener(input.tagName === 'SELECT' || input.type === 'checkbox' ? 'change' : 'input', () => {
+        const action = quickActions[Number(input.closest('[data-action-index]').dataset.actionIndex)];
+        action[input.dataset.actionField] = input.type === 'checkbox' ? input.checked : input.value;
+      }));
+    }
+    function addQuickAction() {
+      quickActions.push({ id: `action_${Date.now()}`, label: '', type: 'message', value: '', enabled: true });
+      renderQuickActionEditor(quickActions);
+    }
+    function deleteQuickAction(index) {
+      quickActions.splice(index, 1);
+      renderQuickActionEditor(quickActions);
+    }
+    function moveQuickAction(index, direction) {
+      const next = index + direction;
+      if (next < 0 || next >= quickActions.length) return;
+      [quickActions[index], quickActions[next]] = [quickActions[next], quickActions[index]];
+      renderQuickActionEditor(quickActions);
+    }
+    function useFaqStarters() {
+      const faqs = currentConfig?.draft?.faqs || currentConfig?.faqs || [];
+      if (!faqs.length) { document.getElementById('qaStatus').textContent = 'No FAQs yet. Add business knowledge first.'; return; }
+      document.getElementById('qaStarters').value = faqs.slice(0, 5).map(faq => faq.question).join('\n');
+      document.getElementById('qaStatus').textContent = 'Filled from your FAQs. Edit, then save to Draft.';
+    }
+    async function generateStartersWithAI(button) {
+      const status = document.getElementById('qaStatus');
+      const label = button.querySelector('span');
+      button.disabled = true;
+      label.textContent = 'Generating…';
+      status.textContent = '';
+      try {
+        const response = await fetch(`${API_BASE}/api/config/starters/generate`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ clientId: 'grapelabs', instruction: document.getElementById('qaStarterInstruction').value.trim() }) });
+        const data = await response.json();
+        if (!response.ok || !data.success) throw new Error(data.error || 'Could not generate starters.');
+        document.getElementById('qaStarters').value = data.starters.join('\n');
+        status.textContent = `Generated ${data.starters.length} starters. Review them, then save to Draft.`;
+      } catch (error) {
+        status.textContent = error.message;
+      } finally {
+        button.disabled = false;
+        label.textContent = 'Generate with AI';
+      }
+    }
+    function collectEngagementSettings() {
+      const actions = quickActions.map(action => ({ ...action, label: action.label.trim(), value: action.value.trim() }));
+      const invalid = actions.find(action => !action.label || (['message', 'link'].includes(action.type) && !action.value));
+      if (invalid) throw new Error(`“${invalid.label || 'A quick action'}” needs a label${['message', 'link'].includes(invalid.type) ? ' and a value' : ''}.`);
+      const badLink = actions.find(action => action.type === 'link' && !/^https?:\/\//i.test(action.value));
+      if (badLink) throw new Error(`“${badLink.label}” needs a URL starting with https://`);
+      return {
+        quickActions: {
+          enabled: document.getElementById('qaEnabled').checked,
+          showInChat: document.getElementById('qaShowInChat').checked,
+          showInTeaser: document.getElementById('qaShowInTeaser').checked,
+          maxStarters: Math.max(1, Math.min(6, Number(document.getElementById('qaMaxStarters').value) || 3)),
+          starters: [...new Set(document.getElementById('qaStarters').value.split(/\r?\n/).map(line => line.trim().slice(0, 120)).filter(Boolean))].slice(0, 10),
+          actions
+        },
+        recommendations: {
+          enabled: document.getElementById('recoEnabled').checked,
+          showOnWelcome: document.getElementById('recoShowOnWelcome').checked,
+          showReasons: document.getElementById('recoShowReasons').checked,
+          maxItems: Math.max(1, Math.min(6, Number(document.getElementById('recoMaxItems').value) || 3))
+        }
+      };
+    }
+    async function saveEngagementSettings() {
+      let draft;
+      try { draft = collectEngagementSettings(); } catch (error) { return alert(error.message); }
+      const response = await fetch(`${API_BASE}/api/config/draft`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ clientId: 'grapelabs', draft }) });
+      const data = await response.json();
+      if (!response.ok || !data.success) return alert(data.error || 'Could not save settings.');
+      currentConfig = data.config;
+      document.getElementById('qaStatus').textContent = 'Saved to Draft. Publish changes when ready.';
+      alert('Quick actions and recommendation settings saved to Draft. Publish changes when ready.');
+    }
+    async function previewRecommendations() {
+      const status = document.getElementById('recoPreviewStatus');
+      const output = document.getElementById('recoPreview');
+      status.textContent = 'Ranking catalog…';
+      try {
+        const profile = {
+          industry: document.getElementById('recoPreviewIndustry').value.trim(),
+          pains: document.getElementById('recoPreviewPains').value.trim(),
+          interests: document.getElementById('recoPreviewInterests').value.trim(),
+          intent: document.getElementById('recoPreviewIntent').value,
+          pages: document.getElementById('recoPreviewPages').value.split(/\r?\n/).map(line => line.trim()).filter(Boolean)
+        };
+        const limit = Math.max(1, Math.min(6, Number(document.getElementById('recoMaxItems').value) || 3));
+        const response = await fetch(`${API_BASE}/api/recommendations`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ clientId: 'grapelabs', preview: true, profile, limit }) });
+        const data = await response.json();
+        if (!response.ok || !data.success) throw new Error(data.error || 'Could not preview recommendations.');
+        output.innerHTML = data.items.length
+          ? `<strong>Top ${data.items.length} for this visitor</strong> <span style="color:#777">(intent: ${escapeLeadCell(data.intentLevel)})</span>${data.items.map((item, index) => `<p style="margin-top:10px"><b>${index + 1}. ${escapeLeadCell(item.name)}</b> <span style="color:#777">· fit ${item.score}</span><br>${escapeLeadCell(item.reasons.join(' · ') || 'General fit')}</p>`).join('')}`
+          : '<strong>No strong match.</strong><p style="margin-top:8px">With no matching signal, the widget hides “Recommended for you” and “Recommend for me” starts the discovery quiz. Try other details, or add industries and descriptions to your products.</p>';
+        output.style.display = 'block';
+        status.textContent = 'Uses the draft product catalog.';
       } catch (error) { status.textContent = error.message; }
     }
 

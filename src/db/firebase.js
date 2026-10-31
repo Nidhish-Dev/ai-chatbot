@@ -297,7 +297,51 @@ async function uploadPublicProductImage(clientId, image) {
   return `https://firebasestorage.googleapis.com/v0/b/${bucket.name}/o/${encodeURIComponent(objectPath)}?alt=media&token=${token}`;
 }
 
+/**
+ * Gated lead-capture resources are stored privately: never at a public URL.
+ * Local development: .data/lead-resources/<fileId>. Production: Firebase Storage (no download token),
+ * streamed through the API only after the visitor has shared the required details.
+ */
+const LOCAL_RESOURCE_DIR = path.join(LOCAL_DB_DIR, 'lead-resources');
+
+async function saveLeadResourceFile(clientId, { buffer, contentType, fileName }) {
+  const fileId = `res_${randomUUID().replace(/-/g, '')}`;
+  const safeClientId = String(clientId || 'grapelabs').replace(/[^a-zA-Z0-9_-]/g, '_');
+  if (!isRealFirebase) {
+    fs.mkdirSync(LOCAL_RESOURCE_DIR, { recursive: true });
+    fs.writeFileSync(path.join(LOCAL_RESOURCE_DIR, fileId), buffer);
+    return { id: fileId, storage: 'local', path: fileId, fileName, contentType, size: buffer.length };
+  }
+  initFirebase();
+  let bucket;
+  try {
+    bucket = getStorage().bucket(env.FIREBASE_STORAGE_BUCKET || undefined);
+  } catch (error) {
+    throw new Error('File uploads need FIREBASE_STORAGE_BUCKET to be set on the server. You can use a link instead.');
+  }
+  const objectPath = `lead-resources/${safeClientId}/${fileId}`;
+  await bucket.file(objectPath).save(buffer, {
+    resumable: false,
+    metadata: { contentType, contentDisposition: `attachment; filename="${String(fileName).replace(/"/g, '')}"` }
+  });
+  return { id: fileId, storage: 'firebase', path: objectPath, fileName, contentType, size: buffer.length };
+}
+
+/** Returns a readable stream for a stored resource file. */
+function openLeadResourceFile(file) {
+  if (!file?.path) throw new Error('File not found');
+  if (file.storage === 'local') {
+    const fullPath = path.join(LOCAL_RESOURCE_DIR, path.basename(file.path));
+    if (!fs.existsSync(fullPath)) throw new Error('File not found');
+    return fs.createReadStream(fullPath);
+  }
+  initFirebase();
+  return getStorage().bucket(env.FIREBASE_STORAGE_BUCKET || undefined).file(file.path).createReadStream();
+}
+
 module.exports = {
+  saveLeadResourceFile,
+  openLeadResourceFile,
   getDb: initFirebase,
   isRealFirebase: () => isRealFirebase,
   uploadPublicProductImage

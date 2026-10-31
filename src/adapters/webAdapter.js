@@ -54,6 +54,9 @@ class WebAdapter {
           buttons: result.buttons,
           cards: result.cards,
           nudge: result.nudge || null,
+          leadCapture: result.leadCapture || null,
+          handover: result.handover || null,
+          attachments: result.attachments || [],
           intent: result.intent,
           person: result.person
         })}\n\n`);

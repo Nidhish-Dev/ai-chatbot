@@ -99,6 +99,14 @@ class ConfigService {
       }
     }
 
+    // Configs saved before quick actions / recommendations existed get the defaults (not persisted
+    // until the operator saves and publishes from the control panel).
+    for (const key of ['quickActions', 'recommendations', 'leadCapture', 'personality', 'handover']) {
+      if (!config[key] || typeof config[key] !== 'object') {
+        config = { ...config, [key]: JSON.parse(JSON.stringify(defaultClientConfig[key])) };
+      }
+    }
+
     configCache.set(clientId, config);
     return config;
   }
@@ -150,7 +158,8 @@ class ConfigService {
     const liveKeys = [
       'active', 'branding', 'cagCompanyName', 'channels', 'faqs', 'products', 'nudges', 'brandVoice', 'customKnowledge',
       'knowledge', 'promptLive', 'scoring', 'teaser', 'links', 'alerts', 'limits',
-      'consultant', 'faqChips', 'leadRules', 'messageLimits', 'tryIt', 'knowledgeDocuments'
+      'consultant', 'faqChips', 'leadRules', 'messageLimits', 'tryIt', 'knowledgeDocuments',
+      'quickActions', 'recommendations', 'leadCapture', 'personality', 'handover'
     ];
     const previousLive = Object.fromEntries(
       liveKeys

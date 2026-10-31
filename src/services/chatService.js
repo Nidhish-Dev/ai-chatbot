@@ -2,9 +2,24 @@ const ConfigService = require('./configService');
 const IdentityService = require('./identityService');
 const LeadService = require('./leadService');
 const EventService = require('./eventService');
+const RecommendationService = require('./recommendationService');
+const LeadCaptureService = require('./leadCaptureService');
+const HandoverService = require('./handoverService');
 const { MessageRepository, SessionRepository, PersonRepository } = require('../db/models');
 const { buildSystemPrompt } = require('../ai/promptBuilder');
 const { callAI } = require('../ai/openaiService');
+
+// Apply a dot-notation patch to a copy of the person, to see what will be known after this turn.
+function applyPatchPreview(person, patch) {
+  const copy = JSON.parse(JSON.stringify(person || {}));
+  for (const [key, value] of Object.entries(patch || {})) {
+    const parts = key.split('.');
+    let target = copy;
+    parts.slice(0, -1).forEach(part => { target[part] = target[part] && typeof target[part] === 'object' ? target[part] : {}; target = target[part]; });
+    target[parts[parts.length - 1]] = value;
+  }
+  return copy;
+}
 
 class ChatService {
   /**
@@ -105,6 +120,23 @@ class ChatService {
 
     if (!hasContact && sessionMessageCount > maxMessagesWithoutContact) {
       const softAskReply = "You've been asking some great questions! To make sure we give you the most tailored automation blueprint (and so our engineers can follow up with exact specs), what is the best email or WhatsApp number to reach you at?";
+      const capQuestions = LeadCaptureService.missingQuestions(person, LeadCaptureService.enabledQuestions(LeadCaptureService.settings(config)));
+      const capSettings = LeadCaptureService.settings(config);
+      if (capSettings.enabled && capQuestions.length) {
+        const payload = LeadCaptureService.buildPayload({ type: 'questions', settings: capSettings, questions: capQuestions.slice(0, Math.max(1, Number(capSettings.questionsPerAsk) || 3)) });
+        return {
+          reply: "You've been asking some great questions! To keep going with a tailored answer, please share a few details below.",
+          buttons: [],
+          cards: [],
+          intent: 'contact_cap_soft_ask',
+          extracted: {},
+          score_signals: [],
+          leadCapture: payload,
+          followUp: channel !== 'web' ? LeadCaptureService.followUpText(payload) : '',
+          attachments: [],
+          person: { id: person.id, stage: person.stage, score: person.score, name: person.fields?.name }
+        };
+      }
       return {
         reply: softAskReply,
         buttons: ["Share contact", "Book a call", "Try it on my business"],
@@ -129,6 +161,29 @@ class ChatService {
       scoreSignals: []
     });
 
+    // 4b. Learn preferences for personalised recommendations (topics, products opened,
+    // purchase intent, quiz answers, browsing history sent by the widget).
+    const quizAnswers = Array.isArray(metadata.quizAnswers) ? metadata.quizAnswers : null;
+    const learnedPreferences = RecommendationService.learnFromMessage({
+      person,
+      text: actualText,
+      isButton: isButtonInteraction,
+      config,
+      browsing: metadata.browsing,
+      quizAnswers
+    });
+    const preferencePatch = learnedPreferences ? { preferences: learnedPreferences } : {};
+    if (quizAnswers) {
+      const quizFieldMap = { industry: 'fields.industry', team_size: 'fields.teamSize', pains: 'fields.pains' };
+      quizAnswers.forEach(item => {
+        const target = quizFieldMap[item?.field];
+        if (target && typeof item.answer === 'string' && item.answer.trim()) preferencePatch[target] = item.answer.trim().slice(0, 120);
+      });
+    }
+    if (Object.keys(preferencePatch).length) {
+      person = await PersonRepository.update(person.id, preferencePatch);
+    }
+
     // 5. Fetch recent chat history for context
     const recentMessages = await MessageRepository.getByPerson(person.id, 8);
     const formattedHistory = recentMessages.map(m => ({
@@ -143,20 +198,41 @@ class ChatService {
     const conversationTurnCount = Math.max(sessionMessageCount, sessionUserTurns);
 
     // 6. Build dynamic system prompt with Business Context (CAG) & Brand Voice
+    const leadSettings = LeadCaptureService.settings(config);
+    const requestedResource = LeadCaptureService.matchResource({
+      config,
+      text: isButtonInteraction && !metadata.requestResourceId ? '' : actualText,
+      resourceId: typeof metadata.requestResourceId === 'string' ? metadata.requestResourceId : null
+    });
+    const recommendationSettings = RecommendationService.settings(config);
+    const recommendationResult = recommendationSettings.enabled !== false
+      ? RecommendationService.recommendFor({ config, person, limit: Math.max(3, Number(recommendationSettings.maxItems) || 3) })
+      : null;
+
     const systemPrompt = buildSystemPrompt(config, {
       ...person.fields,
       score: person.score,
       stage: person.stage,
-      conversationTurnCount
+      conversationTurnCount,
+      recommendationBlock: RecommendationService.promptBlock(recommendationResult),
+      resourceBlock: leadSettings.enabled && ['gated', 'both'].includes(leadSettings.mode)
+        ? leadSettings.resources.filter(resource => resource.enabled !== false).map(resource => `- [${resource.id}] ${resource.title}${resource.description ? `: ${resource.description}` : ''}`).join('\n')
+        : ''
     });
 
     // 7. Single AI Call (Pillar 1.2: Lean)
-    const aiResult = await callAI({
-      messages: formattedHistory,
-      systemPrompt,
-      config,
-      personContext: { ...person.fields, conversationTurnCount }
-    });
+    // A request for a gated resource (by keyword or a quick action) is answered by the server without an
+    // AI call, so the file is never promised or shared before the visitor gives the required details.
+    const aiResult = requestedResource
+      ? { reply: '', buttons: [], cards: [], nudge: null, intent: 'resource_request', extracted: {}, score_signals: [] }
+      : await callAI({
+        messages: formattedHistory,
+        systemPrompt,
+        config,
+        personContext: { ...person.fields, conversationTurnCount }
+      });
+    const aiResourceId = typeof aiResult.structured?.resource_request === 'string' ? aiResult.structured.resource_request : null;
+    const gatedResource = requestedResource || (aiResourceId ? LeadCaptureService.matchResource({ config, resourceId: aiResourceId }) : null);
 
     const catalog = (config.products || []).filter(product => product.active !== false);
     const asksForOtherProducts = /\b(?:other|more|remaining|rest)\s+(?:of\s+the\s+)?products?\b/i.test(actualText);
@@ -164,7 +240,7 @@ class ChatService {
       && /\b(products?|services|offerings)\b/i.test(actualText)
       && /\b(what|which|list|all|offer|show|other|more|catalog|provide|sell)\b/i.test(actualText);
     let catalogResponse = false;
-    if (asksForCatalog || asksForOtherProducts) {
+    if (!gatedResource && (asksForCatalog || asksForOtherProducts)) {
       catalogResponse = true;
       const previouslyShownIds = new Set(recentMessages
         .filter(item => item.role === 'assistant')
@@ -209,6 +285,32 @@ class ChatService {
         ctaUrl: product.ctaUrl || ''
       };
     }).filter(Boolean);
+
+    // Personalised recommendations: use the ranked shortlist when the visitor asked for a
+    // recommendation but the AI returned no cards, and attach a short "why it fits" reason.
+    if (!catalogResponse && recommendationResult?.personalised && !aiResult.cards.length
+      && (RecommendationService.isRecommendationRequest(actualText) || !!quizAnswers)) {
+      aiResult.cards = recommendationResult.items
+        .slice(0, Math.max(1, Math.min(6, Number(recommendationSettings.maxItems) || 3)))
+        .map(({ score, reasons, ...card }) => card);
+    }
+    const reasonById = new Map((recommendationResult?.items || []).map(item => [String(item.id), item.reason]));
+    aiResult.cards = aiResult.cards.map(card => {
+      const { reason, ...rest } = card;
+      const why = recommendationSettings.showReasons !== false && !catalogResponse ? (reason || reasonById.get(String(card.id)) || '') : '';
+      return why ? { ...rest, reason: why } : rest;
+    });
+    // Ready-to-buy visitors who were just shown products get a direct booking option.
+    if (recommendationResult?.intentLevel === 'ready' && aiResult.cards.length
+      && !(aiResult.buttons || []).some(button => /book|call|demo/i.test(button))) {
+      aiResult.buttons = [...(aiResult.buttons || []).slice(0, 2), 'Book a call'];
+    }
+
+    // Quick action "Contact support" (or any explicit ask for a person) always alerts the team.
+    if (HandoverService.isHandoverRequest(actualText)) {
+      aiResult.intent = 'human';
+    }
+
     const nudgeSettings = config.nudges || {};
 
     // 8. Update extracted fields on Person Profile
@@ -257,41 +359,70 @@ class ChatService {
     }
 
     const gotContact = (!person.identifiers?.email && !!extracted.email) || (!person.identifiers?.phone && !!extracted.phone);
-    const invalidNameValues = new Set(['learn more', 'more info', 'book a call', 'contact support', 'explore products', 'get recommendations']);
-    const usableName = value => !!value && !invalidNameValues.has(String(value).trim().toLowerCase());
-    const hasNameAfterTurn = usableName(person.fields?.name) || usableName(extracted.name);
-    const hasContactAfterTurn = !!(person.identifiers?.email || person.identifiers?.phone || extracted.email || extracted.phone);
-    // Let the conversation develop, then ask for follow-up details after three exchanges.
-    const leadMoment = conversationTurnCount >= 3;
-    const lastAskedAtMessage = sessionId
-      ? currentSession?.leadCaptureLastAskedAt
-      : captureState.lastAskedAtMessage;
-    const shouldAskInThisSession = !lastAskedAtMessage || conversationTurnCount <= lastAskedAtMessage || conversationTurnCount - lastAskedAtMessage >= 3;
-    const leadCaptureSkipReason = !leadMoment
-      ? 'waiting_for_third_exchange'
-      : !shouldAskInThisSession
-        ? 'recently_asked'
-        : hasContactAfterTurn && hasNameAfterTurn
-          ? 'name_and_contact_already_saved'
-          : 'prompting_for_missing_details';
-    console.info(`[Lead capture] person=${person.id} session=${sessionId || 'none'} exchanges=${conversationTurnCount} action=${leadCaptureSkipReason}`);
-    let leadFollowup = '';
+
+    // Lead capture (separate from the answer). See LeadCaptureService and the control panel's Lead capture tab.
+    const projectedPerson = applyPatchPreview(person, patchFields);
     let nextCaptureState = captureState;
-    if (leadMoment && shouldAskInThisSession) {
-      if (!hasContactAfterTurn && !hasNameAfterTurn) {
-        leadFollowup = 'If you would like a tailored follow-up, please share your name and either your email address or WhatsApp number.';
-        nextCaptureState = { awaiting: 'contact_details', lastAskedAtMessage: conversationTurnCount, lastAskedInSession: sessionId || null };
-      } else if (!hasContactAfterTurn) {
-        leadFollowup = 'What is the best email address or phone number for our team to reach you?';
-        nextCaptureState = { awaiting: 'contact', lastAskedAtMessage: conversationTurnCount, lastAskedInSession: sessionId || null };
-      } else if (!hasNameAfterTurn) {
-        leadFollowup = 'If you would like a tailored follow-up, what name should I use?';
-        nextCaptureState = { awaiting: 'name', lastAskedAtMessage: conversationTurnCount, lastAskedInSession: sessionId || null };
+    let leadCapturePayload = null;
+    let resourceAttachments = [];
+    let leadCaptureAction = 'none';
+    const unlockResource = resource => {
+      resourceAttachments = [LeadCaptureService.attachmentFor({ clientId, personId: person.id, resource })];
+      const unlocked = Array.from(new Set([...(person.resourcesUnlocked || []), resource.title]));
+      patchFields.resourcesUnlocked = unlocked;
+      patchFields['customFields.lc_resources'] = unlocked.join(', ');
+      nextCaptureState = { ...nextCaptureState, pendingResourceId: null, awaiting: null };
+    };
+    if (gatedResource) {
+      const missing = LeadCaptureService.resourceRequirements(leadSettings, gatedResource, projectedPerson);
+      aiResult.buttons = [];
+      aiResult.cards = [];
+      if (missing.length) {
+        leadCapturePayload = LeadCaptureService.buildPayload({ type: 'gate', settings: leadSettings, questions: missing, resource: gatedResource });
+        // One message: the gate text is the reply and the form sits inside it.
+        aiResult.reply = `${leadCapturePayload.intro}${gatedResource.description ? `\n\n_${gatedResource.description}_` : ''}`;
+        leadCapturePayload.inline = true;
+        leadCapturePayload.showIntro = false;
+        nextCaptureState = { ...captureState, awaiting: missing[0].field, pendingResourceId: gatedResource.id };
+        leadCaptureAction = 'gate_requested_details';
       } else {
-        nextCaptureState = { ...captureState, awaiting: null };
+        aiResult.reply = `Here’s **${gatedResource.title}**.${gatedResource.description ? ` ${gatedResource.description}` : ''}`;
+        unlockResource(gatedResource);
+        leadCaptureAction = 'gate_unlocked';
+      }
+    } else if (captureState.pendingResourceId) {
+      // Details typed into the chat (or sent on WhatsApp/Instagram) can complete a pending resource request.
+      const pending = LeadCaptureService.matchResource({ config, resourceId: captureState.pendingResourceId });
+      if (pending && !LeadCaptureService.resourceRequirements(leadSettings, pending, projectedPerson).length) {
+        unlockResource(pending);
+        leadCaptureAction = 'gate_unlocked_from_text';
       }
     }
-    if (leadFollowup) aiResult.reply = `${aiResult.reply}\n\n${leadFollowup}`;
+    if (!leadCapturePayload && !resourceAttachments.length) {
+      const askState = sessionId
+        ? currentSession
+        : { leadCaptureLastAskedAt: captureState.lastAskedAtMessage, leadCaptureAskCount: captureState.askCount };
+      const { questions } = LeadCaptureService.questionsToAsk({ config, person: projectedPerson, session: askState, conversationTurnCount });
+      if (questions.length) {
+        leadCapturePayload = LeadCaptureService.buildPayload({ type: 'questions', settings: leadSettings, questions });
+        nextCaptureState = {
+          ...captureState,
+          awaiting: questions[0].field,
+          lastAskedAtMessage: conversationTurnCount,
+          askCount: Number(captureState.askCount || 0) + 1
+        };
+        if (sessionId) {
+          await SessionRepository.createOrUpdate(sessionId, {
+            leadCapturePrompted: true,
+            leadCaptureLastAskedAt: conversationTurnCount,
+            leadCaptureAskCount: Number(currentSession?.leadCaptureAskCount || 0) + 1
+          });
+        }
+        leadCaptureAction = `asked_${questions.length}_questions`;
+      }
+    }
+    const followUp = leadCapturePayload && channel !== 'web' ? LeadCaptureService.followUpText(leadCapturePayload) : '';
+    console.info(`[Lead capture] person=${person.id} session=${sessionId || 'none'} exchanges=${conversationTurnCount} mode=${leadSettings.enabled ? leadSettings.mode : 'off'} action=${leadCaptureAction}`);
     const cooldownExchanges = Math.max(1, Number(nudgeSettings.cooldownExchanges || 3));
     const lastNudgeAtTurn = Number(currentSession?.nudgeLastAtTurn || 0);
     const nudgeCooldownPassed = !lastNudgeAtTurn || conversationTurnCount - lastNudgeAtTurn >= cooldownExchanges;
@@ -310,13 +441,7 @@ class ChatService {
       await SessionRepository.createOrUpdate(sessionId, { nudgeLastAtTurn: conversationTurnCount });
     }
     console.info(`[AI nudge] session=${sessionId || 'none'} exchanges=${conversationTurnCount} action=${aiResult.nudge ? 'queued' : 'not-eligible'} delaySeconds=${Number(nudgeSettings.delaySeconds || 45)}`);
-    if (leadMoment || Object.keys(nextCaptureState).length) patchFields.leadCapture = nextCaptureState;
-    if (leadFollowup && sessionId) {
-      await SessionRepository.createOrUpdate(sessionId, {
-        leadCapturePrompted: true,
-        leadCaptureLastAskedAt: conversationTurnCount
-      });
-    }
+    if (nextCaptureState !== captureState) patchFields.leadCapture = nextCaptureState;
 
     let updatedPerson = person;
     if (Object.keys(patchFields).length > 0) {
@@ -368,6 +493,47 @@ class ChatService {
       });
     }
 
+    // 10b. Human handover (web): offer a WhatsApp chat pre-filled with the visitor's details and last message.
+    let handover = null;
+    if (channel === 'web' && !gatedResource) {
+      const handoverReason = HandoverService.reasonFor({ config, text: actualText, intent: aiResult.intent });
+      if (handoverReason) {
+        const handoverSettings = HandoverService.settings(config);
+        const missingForHandover = handoverSettings.collectDetailsFirst
+          ? LeadCaptureService.missingQuestions(updatedPerson, LeadCaptureService.enabledQuestions(leadSettings)).filter(question => question.required)
+          : [];
+        if (missingForHandover.length) {
+          leadCapturePayload = LeadCaptureService.buildPayload({ type: 'handover', settings: leadSettings, questions: missingForHandover });
+          leadCapturePayload.intro = handoverSettings.detailsMessage || leadCapturePayload.intro;
+          // Shown inside the same reply as the answer (not as a second message).
+          leadCapturePayload.inline = true;
+          leadCapturePayload.showIntro = handoverReason !== 'requested';
+          if (handoverReason === 'requested') aiResult.reply = leadCapturePayload.intro;
+        } else {
+          leadCapturePayload = null; // don't stack a lead form on top of the handover
+          handover = await HandoverService.buildHandover({
+            config,
+            person: updatedPerson,
+            messages: recentMessages,
+            currentText: actualText,
+            page: metadata.page,
+            reason: handoverReason
+          });
+        }
+        // One reply, not two: an explicit request is answered by the handover itself (the AI's
+        // own answer is dropped). For "unsure" / "frustrated" the AI answer stays and the
+        // WhatsApp button is shown inside the same message by the widget.
+        if (handoverReason === 'requested') {
+          if (handover) aiResult.reply = handover.message;
+          aiResult.buttons = [];
+          aiResult.cards = [];
+          aiResult.nudge = null;
+        }
+        if (handover) aiResult.buttons = [];
+        console.info(`[Handover] person=${updatedPerson.id} reason=${handoverReason} action=${handover ? 'whatsapp_link' : 'collect_details_first'}`);
+      }
+    }
+
     // 11. Save Assistant Reply to DB
     await MessageRepository.add({
       personId: updatedPerson.id,
@@ -382,6 +548,26 @@ class ChatService {
       scoreSignals: aiResult.score_signals
     });
 
+    if (leadCapturePayload) {
+      await MessageRepository.add({
+        personId: updatedPerson.id,
+        sessionId,
+        channel,
+        role: 'assistant',
+        text: `${leadCapturePayload.intro}\n${leadCapturePayload.questions.map(question => `- ${question.question}`).join('\n')}`,
+        intent: 'lead_capture_prompt'
+      });
+    }
+    if (resourceAttachments.length) {
+      await LeadCaptureService.ensureLeadColumns(clientId, [{ id: 'lc_resources', label: 'Resources unlocked' }]);
+      await EventService.emit('resource_unlocked', {
+        personId: updatedPerson.id,
+        clientId,
+        channel,
+        payload: { resourceId: resourceAttachments[0].resourceId, title: resourceAttachments[0].title, person: updatedPerson }
+      });
+    }
+
     // 12. Return Shared Output Format (Section 14.3)
     return {
       reply: aiResult.reply,
@@ -391,6 +577,10 @@ class ChatService {
       intent: aiResult.intent || 'faq',
       extracted: aiResult.extracted || {},
       score_signals: aiResult.score_signals || [],
+      leadCapture: leadCapturePayload,
+      handover,
+      followUp,
+      attachments: resourceAttachments,
       person: {
         id: updatedPerson.id,
         stage: updatedPerson.stage,
