@@ -15,6 +15,7 @@ const knowledgeRoutes = require('./routes/knowledgeRoutes');
 const leadRoutes = require('./routes/leadRoutes');
 const recommendationRoutes = require('./routes/recommendationRoutes');
 const leadCaptureRoutes = require('./routes/leadCaptureRoutes');
+const analyticsRoutes = require('./routes/analyticsRoutes');
 
 const app = express();
 const controlPanelPath = path.resolve(__dirname, '../public/control-panel.html');
@@ -73,6 +74,7 @@ app.use('/', knowledgeRoutes);
 app.use('/', leadRoutes);
 app.use('/', recommendationRoutes);
 app.use('/', leadCaptureRoutes);
+app.use('/', analyticsRoutes);
 
 // Error Handling Middleware
 app.use((err, req, res, next) => {

@@ -232,6 +232,15 @@ class MessageRepository {
     return record;
   }
 
+  /** All messages since an ISO timestamp (analytics & chat history). */
+  static async listSince(fromIso, limit = 50000) {
+    const db = getDb();
+    let query = db.collection(COLLECTIONS.MESSAGES);
+    if (fromIso) query = query.where('timestamp', '>=', fromIso);
+    const snap = await query.limit(limit).get();
+    return snap.docs.map(doc => doc.data()).sort((a, b) => timestampMillis(a.timestamp) - timestampMillis(b.timestamp));
+  }
+
   static async getByPerson(personId, limit = 50) {
     const db = getDb();
     const snap = await db.collection(COLLECTIONS.MESSAGES)
@@ -259,6 +268,15 @@ class EventRepository {
     };
     await db.collection(COLLECTIONS.EVENTS).doc(id).set(record);
     return record;
+  }
+
+  /** All events since an ISO timestamp (filtered by client in memory to avoid a composite index). */
+  static async listSince(fromIso, limit = 50000) {
+    const db = getDb();
+    let query = db.collection(COLLECTIONS.EVENTS);
+    if (fromIso) query = query.where('timestamp', '>=', fromIso);
+    const snap = await query.limit(limit).get();
+    return snap.docs.map(doc => doc.data());
   }
 
   static async getByPerson(personId) {

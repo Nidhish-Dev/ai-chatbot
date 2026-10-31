@@ -101,7 +101,7 @@ class ConfigService {
 
     // Configs saved before quick actions / recommendations existed get the defaults (not persisted
     // until the operator saves and publishes from the control panel).
-    for (const key of ['quickActions', 'recommendations', 'leadCapture', 'personality', 'handover']) {
+    for (const key of ['quickActions', 'recommendations', 'leadCapture', 'personality', 'handover', 'appearance']) {
       if (!config[key] || typeof config[key] !== 'object') {
         config = { ...config, [key]: JSON.parse(JSON.stringify(defaultClientConfig[key])) };
       }
@@ -159,7 +159,7 @@ class ConfigService {
       'active', 'branding', 'cagCompanyName', 'channels', 'faqs', 'products', 'nudges', 'brandVoice', 'customKnowledge',
       'knowledge', 'promptLive', 'scoring', 'teaser', 'links', 'alerts', 'limits',
       'consultant', 'faqChips', 'leadRules', 'messageLimits', 'tryIt', 'knowledgeDocuments',
-      'quickActions', 'recommendations', 'leadCapture', 'personality', 'handover'
+      'quickActions', 'recommendations', 'leadCapture', 'personality', 'handover', 'appearance'
     ];
     const previousLive = Object.fromEntries(
       liveKeys

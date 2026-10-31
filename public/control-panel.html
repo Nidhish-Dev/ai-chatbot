@@ -5,6 +5,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>GrapeLabs Bot Control Panel</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
     :root { --ink:#21132d; --purple:#56208b; --purple-soft:#f3edf9; --amber:#d58b12; --bg:#f5f6f8; --surface:#fff; --text:#261b30; --muted:#6c6574; --border:#e5e1e9; --success:#137a4b; --warning:#9b6100; --shadow:0 10px 30px rgba(33,19,45,.045); }
     * { box-sizing:border-box; margin:0; padding:0; }
@@ -92,6 +95,71 @@
     @media (max-width:640px) { .pers-slider { grid-template-columns:1fr; gap:4px; } }
     .wa-preview { background:#e5ddd5; border-radius:12px; padding:16px; margin-top:8px; }
     .wa-preview-bubble { margin-left:auto; max-width:92%; background:#dcf8c6; border-radius:10px 2px 10px 10px; padding:9px 12px; font-size:13px; line-height:1.45; white-space:pre-wrap; box-shadow:0 1px 1px rgba(0,0,0,.12); }
+    /* Analytics & conversations */
+    .viz-root { --series-1:#7b3fc4; --series-2:#c27a00; --grid:#ece8f0; --axis:#8a8296; --text-secondary:#5d5468; --seq-0:#f4effb; --seq-1:#e2d4f6; --seq-2:#c6aaec; --seq-3:#a77fde; --seq-4:#7b3fc4; --seq-5:#55288f; --ord-1:#a984de; --ord-2:#9163d3; --ord-3:#7b3fc4; --ord-4:#632fa3; --ord-5:#4b2380; }
+    .viz-filters { display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin-bottom:16px; }
+    .viz-filters select, .viz-filters input { padding:8px 11px; border:1px solid var(--border); border-radius:9px; background:#fff; font:inherit; font-size:13px; color:var(--text); }
+    .viz-updated { font-size:12px; color:var(--muted); margin-left:auto; }
+    .kpi-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:12px; margin-bottom:18px; }
+    .kpi { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:14px 16px; box-shadow:var(--shadow); }
+    .kpi-label { font-size:12px; color:var(--text-secondary); font-weight:600; }
+    .kpi-value { font-size:26px; font-weight:750; letter-spacing:-.02em; color:var(--text); margin-top:4px; font-variant-numeric:tabular-nums; }
+    .kpi-sub { font-size:11.5px; color:var(--muted); margin-top:2px; }
+    .kpi-delta { display:inline-block; font-size:11.5px; font-weight:650; margin-top:6px; color:var(--muted); }
+    .kpi-delta.up { color:#137a4b; } .kpi-delta.down { color:#b42318; }
+    .viz-row { display:grid; grid-template-columns:repeat(auto-fit,minmax(320px,1fr)); gap:18px; }
+    .viz-row > .card { margin-bottom:18px; }
+    .viz-legend { display:flex; gap:16px; flex-wrap:wrap; font-size:12px; color:var(--text-secondary); margin:4px 0 8px; }
+    .viz-legend span { display:inline-flex; align-items:center; gap:6px; }
+    .viz-key { width:14px; height:2px; border-radius:2px; display:inline-block; }
+    .viz-chart { position:relative; width:100%; }
+    .viz-chart svg { display:block; width:100%; height:auto; overflow:visible; }
+    .viz-axis text { font-size:10.5px; fill:var(--axis); }
+    .viz-tip { position:fixed; z-index:50; pointer-events:none; background:#fff; border:1px solid var(--border); border-radius:9px; box-shadow:0 8px 24px rgba(33,19,45,.14); padding:8px 10px; font-size:12px; color:var(--text); display:none; min-width:120px; }
+    .viz-tip .tip-title { font-size:11px; color:var(--muted); margin-bottom:4px; }
+    .viz-tip .tip-row { display:flex; align-items:center; gap:7px; margin-top:2px; }
+    .viz-tip .tip-row strong { font-variant-numeric:tabular-nums; }
+    .hbar-list { display:flex; flex-direction:column; gap:9px; }
+    .hbar { display:grid; grid-template-columns:minmax(90px,38%) 1fr auto; gap:10px; align-items:center; font-size:12.5px; }
+    .hbar-label { color:var(--text); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .hbar-track { height:12px; background:transparent; position:relative; }
+    .hbar-fill { position:absolute; left:0; top:0; bottom:0; border-radius:0 4px 4px 0; min-width:2px; }
+    .hbar-value { font-variant-numeric:tabular-nums; color:var(--text-secondary); font-weight:600; min-width:44px; text-align:right; }
+    .heatmap { display:grid; grid-template-columns:34px repeat(24,1fr); gap:2px; font-size:10px; color:var(--axis); }
+    .heatmap .cell { aspect-ratio:1; border-radius:3px; min-height:10px; }
+    .heatmap .hlabel { text-align:center; }
+    .heat-scale { display:flex; align-items:center; gap:6px; font-size:11px; color:var(--muted); margin-top:10px; }
+    .heat-scale i { width:16px; height:10px; border-radius:2px; display:inline-block; }
+    .viz-table { width:100%; border-collapse:collapse; font-size:12.5px; }
+    .viz-table th { text-align:left; font-size:11px; color:var(--muted); font-weight:650; padding:7px 8px; border-bottom:1px solid var(--border); }
+    .viz-table td { padding:8px; border-bottom:1px solid #f1eef4; vertical-align:top; }
+    .viz-table td.num { text-align:right; font-variant-numeric:tabular-nums; }
+    .viz-empty { font-size:13px; color:var(--muted); padding:18px 0; text-align:center; }
+    .link-btn { background:none; border:0; color:var(--purple); font:inherit; font-size:12px; font-weight:650; cursor:pointer; padding:0; }
+    .link-btn:hover { text-decoration:underline; }
+    .flag { display:inline-block; font-size:10.5px; font-weight:650; padding:2px 7px; border-radius:999px; margin:2px 4px 0 0; background:#f3edf9; color:var(--purple); }
+    .flag.handover { background:#e7f8ee; color:#137a4b; } .flag.unsure { background:#fff4e4; color:#94600a; } .flag.booking { background:#e8f0fd; color:#1c5cab; }
+    .conv-layout { display:grid; grid-template-columns:minmax(280px,380px) 1fr; gap:18px; align-items:start; }
+    .conv-list { max-height:calc(100vh - 260px); overflow:auto; display:flex; flex-direction:column; gap:6px; padding-right:4px; }
+    .conv-item { text-align:left; background:#fff; border:1px solid var(--border); border-radius:11px; padding:11px 12px; cursor:pointer; font:inherit; color:var(--text); }
+    .conv-item:hover { border-color:#d4c2e5; } .conv-item.active { border-color:var(--purple); box-shadow:0 0 0 2px var(--purple-soft); }
+    .conv-top { display:flex; justify-content:space-between; gap:8px; font-size:13px; font-weight:650; }
+    .conv-top small { font-weight:500; color:var(--muted); font-size:11px; white-space:nowrap; }
+    .conv-preview { font-size:12px; color:var(--text-secondary); margin-top:3px; overflow:hidden; text-overflow:ellipsis; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; }
+    .conv-preview mark { background:#fff1c7; color:inherit; }
+    .chip-filters { display:flex; gap:6px; flex-wrap:wrap; }
+    .chip-filter { padding:6px 11px; border:1px solid var(--border); border-radius:999px; background:#fff; font:inherit; font-size:12px; cursor:pointer; color:var(--text-secondary); }
+    .chip-filter.on { background:var(--purple); border-color:var(--purple); color:#fff; }
+    .transcript { display:flex; flex-direction:column; gap:8px; max-height:calc(100vh - 420px); min-height:220px; overflow:auto; padding:14px; background:#fbf9fd; border:1px solid var(--border); border-radius:12px; }
+    .t-msg { max-width:78%; padding:9px 12px; border-radius:14px; font-size:13px; line-height:1.45; white-space:pre-wrap; overflow-wrap:anywhere; }
+    .t-msg.user { align-self:flex-end; background:var(--purple); color:#fff; border-bottom-right-radius:4px; }
+    .t-msg.assistant { align-self:flex-start; background:#fff; border:1px solid var(--border); border-bottom-left-radius:4px; }
+    .t-msg.system { align-self:center; background:#f3edf9; color:var(--purple); font-size:12px; }
+    .t-meta { font-size:10.5px; opacity:.7; margin-top:4px; }
+    .person-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:8px 16px; font-size:12.5px; margin-bottom:12px; }
+    .person-grid div span { display:block; font-size:11px; color:var(--muted); }
+    .event-chips { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:12px; }
+    @media (max-width:900px) { .conv-layout { grid-template-columns:1fr; } .conv-list { max-height:360px; } .transcript { max-height:none; } }
     .quiz-question-card { padding:16px; border:1px solid var(--border); border-radius:12px; margin:12px 0; background:linear-gradient(145deg,#fff,#fbf8ff); }
     .quiz-question-head { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:12px; color:var(--text); font-weight:700; }
     .quiz-question-actions { display:flex; align-items:center; gap:6px; }
@@ -113,9 +181,228 @@
     small { font-size:11px; }
     @media (max-width:900px) { .sidebar { width:220px; } .content-area { padding:22px; } .topbar { padding:0 22px; } .prompt-split { grid-template-columns:1fr; } }
     @media (max-width:640px) { body { height:auto; min-height:100vh; overflow:auto; display:block; } .sidebar { width:100%; } .brand { padding:13px 16px; } .nav-tabs { display:flex; padding:7px 10px; overflow-x:auto; } .nav-item { white-space:nowrap; padding:9px 10px; font-size:12px; } .nav-item.active { box-shadow:inset 0 -2px var(--amber); } .main { min-height:calc(100vh - 108px); overflow:visible; } .topbar { min-height:60px; padding:10px 15px; flex-wrap:wrap; } .topbar-title { font-size:16px; } .topbar-actions { gap:7px; } .btn { padding:8px 10px; font-size:11.5px; } .content-area { overflow:visible; padding:15px; } .card { padding:18px 16px; margin-bottom:13px; } .card-title { align-items:flex-start; } .form-grid { grid-template-columns:1fr; } }
+
+    /* Customise tab */
+    .cz-layout { display:grid; grid-template-columns:minmax(0,1fr) 400px; gap:22px; align-items:start; }
+    .cz-preview-col { position:sticky; top:0; }
+    .cz-presets { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-bottom:16px; }
+    .cz-preset { border:1px solid var(--border); background:#fff; border-radius:14px; padding:10px; cursor:pointer; text-align:left; font:inherit; transition:border-color .15s, box-shadow .15s, transform .15s; }
+    .cz-preset:hover { transform:translateY(-1px); box-shadow:var(--shadow); }
+    .cz-preset.on { border-color:var(--purple); box-shadow:0 0 0 3px rgba(123,63,196,.15); }
+    .cz-swatches { display:flex; gap:4px; margin-bottom:8px; }
+    .cz-swatches i { flex:1; height:22px; border-radius:7px; }
+    .cz-preset strong { font-size:12.5px; color:var(--text); }
+    .cz-colors { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
+    .cz-color { display:flex; align-items:center; gap:10px; padding:10px 12px; border:1px solid var(--border); border-radius:14px; background:#fcfbfe; }
+    .cz-color input[type=color] { width:38px; height:38px; border:0; padding:0; background:none; cursor:pointer; border-radius:10px; flex:none; }
+    .cz-color input[type=color]::-webkit-color-swatch-wrapper { padding:0; } .cz-color input[type=color]::-webkit-color-swatch { border:1px solid rgba(0,0,0,.08); border-radius:10px; }
+    .cz-color div { min-width:0; flex:1; } .cz-color strong { display:block; font-size:12.5px; } .cz-color small { display:block; font-size:11px; color:var(--muted); }
+    .cz-color .cz-hex { width:82px; min-height:32px; padding:5px 8px; font-size:12px; font-family:ui-monospace,Menlo,monospace; border-radius:9px; }
+    .cz-seg { margin-top:2px; }
+    .cz-stage { position:relative; height:640px; border-radius:22px; overflow:hidden; border:1px solid var(--border); background:linear-gradient(180deg,#f7f5fa,#eeeaf3); box-shadow:var(--shadow); }
+    .cz-stage-site { position:absolute; inset:18px 18px auto; display:flex; flex-direction:column; gap:10px; opacity:.6; }
+    .cz-stage-site i { display:block; height:10px; border-radius:6px; background:#dcd6e4; } .cz-stage-site i.h { height:22px; width:55%; background:#cfc7da; }
+    .cz-w { position:absolute; bottom:var(--oy,18px); display:flex; flex-direction:column; align-items:flex-end; gap:12px; font-family:var(--cz-font); }
+    .cz-w.right { right:var(--ox,18px); } .cz-w.left { left:var(--ox,18px); align-items:flex-start; }
+    .cz-panel { width:var(--cz-w,300px); height:500px; border-radius:var(--cz-r,22px); background:var(--cz-bg); border:1px solid var(--cz-border); box-shadow:0 22px 50px rgba(28,10,48,.22); overflow:hidden; display:flex; flex-direction:column; color:var(--cz-text); font-size:12px; }
+    .cz-hero { padding:18px 16px 20px; color:#fff; background:var(--cz-hero); position:relative; overflow:hidden; }
+    .cz-hero::after { content:""; position:absolute; width:150px; height:150px; right:-50px; top:-70px; border-radius:50%; background:radial-gradient(circle, color-mix(in srgb, var(--cz-hl) 35%, transparent) 0%, transparent 70%); }
+    .cz-av { width:36px; height:36px; border-radius:var(--cz-avr,50%); background:#fff; display:grid; place-items:center; overflow:hidden; font-weight:800; font-size:14px; color:var(--cz-header); border:1px solid rgba(255,255,255,.3); flex:none; }
+    .cz-av img { width:100%; height:100%; object-fit:cover; } .cz-av svg { width:100%; height:100%; }
+    .cz-av.sm { width:24px; height:24px; font-size:10px; border-color:var(--cz-border); }
+    .cz-prof { display:flex; align-items:center; gap:9px; margin-bottom:14px; position:relative; z-index:1; }
+    .cz-prof strong { display:block; font-size:12.5px; } .cz-prof small { display:block; font-size:10.5px; opacity:.75; }
+    .cz-hero h4 { font-size:20px; font-weight:750; letter-spacing:-.02em; margin-bottom:6px; position:relative; z-index:1; }
+    .cz-hero p { font-size:11.5px; opacity:.82; line-height:1.45; position:relative; z-index:1; }
+    .cz-body { padding:14px; flex:1; overflow:hidden; display:flex; flex-direction:column; gap:9px; }
+    .cz-q { padding:10px 12px; border-radius:12px; background:var(--cz-surface); border:1px solid var(--cz-border); font-size:11.5px; font-weight:500; display:flex; justify-content:space-between; }
+    .cz-q b { color:var(--cz-primary); }
+    .cz-acts { display:grid; grid-template-columns:1fr 1fr; gap:6px; }
+    .cz-act { padding:8px; border-radius:10px; background:var(--cz-surface); border:1px solid var(--cz-border); font-size:10.5px; font-weight:600; display:flex; gap:6px; align-items:center; }
+    .cz-act i { width:16px; height:16px; border-radius:5px; background:var(--cz-subtle); flex:none; }
+    .cz-contact { margin-top:auto; font-size:10.5px; color:var(--cz-muted); }
+    .cz-dock { padding:10px 12px 6px; border-top:1px solid var(--cz-border); }
+    .cz-start { display:flex; align-items:center; gap:9px; padding:10px 12px; border-radius:14px; background:var(--cz-surface); border:1px solid var(--cz-border); }
+    .cz-start strong { display:block; font-size:12px; } .cz-start small { display:block; font-size:10.5px; color:var(--cz-muted); }
+    .cz-foot { text-align:center; font-size:10px; color:var(--cz-muted); padding:5px 0 9px; } .cz-foot b { color:var(--cz-text); }
+    .cz-chathead { display:flex; align-items:center; gap:9px; padding:12px 14px; color:#fff; background:var(--cz-chathead); }
+    .cz-chathead strong { display:block; font-size:12.5px; } .cz-chathead small { display:block; font-size:10.5px; opacity:.75; }
+    .cz-msgs { flex:1; padding:12px; display:flex; flex-direction:column; gap:9px; overflow:hidden; }
+    .cz-disc { text-align:center; font-size:10px; color:var(--cz-muted); }
+    .cz-row { display:flex; gap:7px; align-items:flex-start; }
+    .cz-bub { padding:8px 11px; border-radius:var(--cz-bub,16px); font-size:11.5px; line-height:1.4; max-width:82%; }
+    .cz-bub.bot { background:var(--cz-surface); border:1px solid var(--cz-border); border-bottom-left-radius:var(--cz-bub-tail,16px); }
+    .cz-bub.user { margin-left:auto; background:var(--cz-primary); color:var(--cz-on-primary); border-bottom-right-radius:var(--cz-bub-tail,16px); }
+    .cz-chips { display:flex; gap:5px; padding-left:31px; flex-wrap:wrap; }
+    .cz-chip { padding:5px 9px; border-radius:999px; border:1.5px solid var(--cz-chip); color:var(--cz-primary); background:var(--cz-surface); font-size:10.5px; font-weight:650; }
+    .cz-input { margin:0 12px 4px; display:flex; align-items:center; gap:6px; border:1.5px solid var(--cz-border); border-radius:18px; padding:4px 4px 4px 12px; background:var(--cz-bg); }
+    .cz-input span { flex:1; color:var(--cz-muted); font-size:11px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .cz-input i { width:28px; height:28px; border-radius:50%; background:var(--cz-hl); display:block; }
+    .cz-launch { height:var(--cz-ls,50px); min-width:var(--cz-ls,50px); border-radius:999px; display:inline-flex; align-items:center; justify-content:center; gap:7px; color:#fff; background:var(--cz-launch-bg); border:2px solid var(--cz-launch-border); box-shadow:0 8px 20px rgba(28,10,48,.28); overflow:hidden; }
+    .cz-launch.pill { padding:0 16px 0 5px; }
+    .cz-launch .cz-li { width:calc(var(--cz-ls,50px) - 12px); height:calc(var(--cz-ls,50px) - 12px); border-radius:50%; display:grid; place-items:center; overflow:hidden; flex:none; }
+    .cz-launch .cz-li img { width:100%; height:100%; object-fit:cover; } .cz-launch .cz-li svg { width:100%; height:100%; }
+    .cz-launch .cz-li.icon svg { width:55%; height:55%; stroke:currentColor; fill:none; stroke-width:2; }
+    .cz-launch span.t { font-size:12.5px; font-weight:650; white-space:nowrap; }
+    @media (max-width:1180px) { .cz-layout { grid-template-columns:1fr; } .cz-preview-col { position:static; } }
+
+    /* ================= Refined UI layer (same palette: ink, purple, amber) ================= */
+    :root { --ink:#21132d; --purple:#56208b; --purple-2:#7b3fc4; --purple-soft:#f3edf9; --purple-softer:#faf7fd; --amber:#d58b12; --amber-soft:#fdf3e1;
+      --green-soft:#e6f6ee; --rose-soft:#fdecef; --blue-soft:#ebeffb; --teal-soft:#e6f5f3;
+      --bg:#f4f2f8; --surface:#ffffff; --glass:rgba(255,255,255,.8); --border:#ebe6f1; --text:#21132d; --muted:#7a7186; --radius-lg:20px; --radius:14px;
+      --shadow:0 1px 2px rgba(33,19,45,.04), 0 8px 24px rgba(86,32,139,.06); --shadow-hover:0 2px 4px rgba(33,19,45,.05), 0 16px 36px rgba(86,32,139,.11); }
+    body { font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; -webkit-font-smoothing:antialiased; padding:16px;
+      background: radial-gradient(1100px 600px at 8% -10%, #ebe1f8 0%, transparent 60%), radial-gradient(900px 520px at 100% 0%, #fbefdc 0%, transparent 55%), radial-gradient(900px 700px at 55% 115%, #eee6fa 0%, transparent 60%), var(--bg); }
+
+    /* Sidebar: floating frosted card */
+    .sidebar { width:256px; background:var(--glass); -webkit-backdrop-filter:blur(18px) saturate(140%); backdrop-filter:blur(18px) saturate(140%); color:var(--text);
+      border:1px solid rgba(255,255,255,.95); border-radius:24px; box-shadow:var(--shadow); margin-right:22px; overflow:hidden; }
+    .brand { padding:18px 18px 15px; border-bottom:1px solid var(--border); color:var(--purple); font-size:18px; font-weight:800; letter-spacing:-.02em; }
+    .brand small { display:block; font-size:11px; font-weight:600; color:var(--muted); letter-spacing:0; margin-top:2px; }
+    .brand-mark { width:40px; height:40px; border-radius:13px; background:linear-gradient(145deg,#8a4fd0,#56208b); border:0; box-shadow:0 8px 18px rgba(86,32,139,.28); }
+    .brand-mark .icon { width:21px; height:21px; }
+    .nav-tabs { padding:6px 12px 12px; }
+    .nav-section { list-style:none; font-size:10px; font-weight:700; letter-spacing:.09em; text-transform:uppercase; color:#a79db4; padding:12px 12px 4px; }
+    .nav-item { color:#4b4256; font-weight:600; font-size:13px; padding:8px 12px; margin:1px 0; border-radius:12px; border:1px solid transparent; transition:background .15s, color .15s, box-shadow .15s; }
+    .nav-item .icon { opacity:1; color:#8e84a2; transition:color .15s; }
+    .nav-item:hover { background:rgba(243,237,249,.85); color:var(--purple); }
+    .nav-item:hover .icon, .nav-item.active .icon { color:var(--purple); }
+    .nav-item.active { background:#fff; color:var(--purple); border-color:#eee6f6; box-shadow:0 1px 2px rgba(33,19,45,.05), 0 8px 20px rgba(86,32,139,.13); }
+    .side-status { margin:6px 12px 12px; padding:12px 14px; border-radius:16px; background:linear-gradient(145deg,#56208b,#7b3fc4); color:#fff; box-shadow:0 12px 26px rgba(86,32,139,.28); }
+    .side-status strong { display:flex; align-items:center; gap:9px; font-size:13px; }
+    .side-status small { display:block; font-size:11.5px; opacity:.82; margin-top:5px; line-height:1.4; }
+    .live-dot { width:8px; height:8px; border-radius:50%; background:#4ade80; animation:live-pulse 2s infinite; flex:none; }
+    .live-dot.off { background:#f87171; animation:none; }
+    @keyframes live-pulse { 0% { box-shadow:0 0 0 0 rgba(74,222,128,.55); } 70% { box-shadow:0 0 0 7px rgba(74,222,128,0); } 100% { box-shadow:0 0 0 0 rgba(74,222,128,0); } }
+
+    /* Top bar & page header */
+    .main { background:transparent; }
+    .topbar { min-height:58px; background:transparent; border:0; padding:0 6px 0 2px; gap:14px; }
+    .top-search { flex:1; max-width:470px; display:flex; align-items:center; gap:10px; padding:0 14px; height:46px; border-radius:15px; background:var(--glass); border:1px solid rgba(255,255,255,.95); box-shadow:var(--shadow); -webkit-backdrop-filter:blur(12px); backdrop-filter:blur(12px); cursor:text; transition:box-shadow .15s, border-color .15s; }
+    .top-search:focus-within { border-color:#d8c8ea; box-shadow:0 0 0 4px rgba(123,63,196,.10), var(--shadow); }
+    .top-search .icon { color:#9a90a8; }
+    .top-search input { flex:1; min-width:0; border:0; outline:0; background:transparent; font:inherit; font-size:13px; color:var(--text); }
+    .top-search kbd { font:inherit; font-size:10.5px; color:var(--muted); border:1px solid var(--border); border-radius:6px; padding:1px 7px; background:#fff; }
+    .top-chip { display:inline-flex; align-items:center; gap:9px; height:46px; padding:0 15px 0 8px; border-radius:15px; background:var(--glass); border:1px solid rgba(255,255,255,.95); box-shadow:var(--shadow); font-size:13px; font-weight:650; color:var(--text); white-space:nowrap; }
+    .top-chip .chip-icon { width:30px; height:30px; border-radius:10px; display:grid; place-items:center; background:var(--purple-soft); color:var(--purple); }
+    .top-chip .chip-icon .icon { width:16px; height:16px; }
+    .top-avatar { width:44px; height:44px; border-radius:50%; display:grid; place-items:center; background:linear-gradient(145deg,#e5a032,#d58b12); color:#2b1600; font-weight:800; font-size:13px; box-shadow:0 8px 18px rgba(213,139,18,.32); border:2px solid #fff; flex:none; }
+    .content-area { padding:4px 6px 44px 2px; }
+    .page-head { display:flex; align-items:flex-end; justify-content:space-between; gap:16px; margin:16px 0 22px; flex-wrap:wrap; max-width:1360px; margin-left:auto; margin-right:auto; }
+    .page-head h1 { font-size:27px; font-weight:800; letter-spacing:-.035em; color:var(--text); line-height:1.15; }
+    .page-head p { font-size:13.5px; color:var(--muted); margin-top:6px; }
+    .page-head .topbar-actions { flex-wrap:wrap; }
+    .tab-content { max-width:1360px; }
+    .tab-content.active { animation:fade-up .3s cubic-bezier(.2,.8,.2,1); }
+    @keyframes fade-up { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:none; } }
+
+    /* Cards */
+    .card { background:var(--surface); border:1px solid rgba(235,230,241,.9); border-radius:var(--radius-lg); padding:24px 26px; box-shadow:var(--shadow); transition:box-shadow .2s ease; }
+    .card:hover { box-shadow:var(--shadow-hover); }
+    .card-title { font-size:16px; font-weight:700; color:var(--text); }
+    .card-title > span:first-child .icon { width:34px; height:34px; padding:8px; border-radius:11px; background:var(--purple-soft); color:var(--purple); stroke-width:2; }
+
+    /* Buttons */
+    .btn { min-height:40px; padding:9px 16px; border-radius:12px; font-size:13px; font-weight:650; gap:7px; position:relative; transition:transform .15s, box-shadow .15s, background .15s, border-color .15s; }
+    .btn-primary { background:linear-gradient(180deg,#e09a22,#d58b12); color:#24132f; box-shadow:0 1px 0 rgba(255,255,255,.35) inset, 0 6px 16px rgba(213,139,18,.28); }
+    .btn-primary:hover { background:linear-gradient(180deg,#d69016,#c77d08); box-shadow:0 10px 22px rgba(213,139,18,.34); }
+    .btn-secondary { background:#fff; border-color:var(--border); color:var(--purple); box-shadow:0 1px 2px rgba(33,19,45,.04); }
+    .btn-secondary:hover { background:var(--purple-softer); border-color:#dccdeb; }
+    .btn.is-loading, button.is-loading { color:transparent !important; pointer-events:none; }
+    .btn.is-loading .icon, button.is-loading .icon, button.is-loading span { visibility:hidden; }
+    .btn.is-loading::after, button.is-loading::after { content:""; position:absolute; inset:0; margin:auto; width:16px; height:16px; border-radius:50%; border:2px solid rgba(86,32,139,.22); border-top-color:var(--purple); animation:spin .7s linear infinite; }
+    .btn-primary.is-loading::after { border-color:rgba(36,19,47,.22); border-top-color:#24132f; }
+    @keyframes spin { to { transform:rotate(360deg); } }
+
+    /* Forms */
+    .form-label { font-size:12px; font-weight:650; color:#4f4659; }
+    .form-control { min-height:42px; border-radius:12px; border:1px solid #e3ddea; background:#fcfbfe; transition:border .15s, box-shadow .15s, background .15s; }
+    .form-control:hover { border-color:#d6cbe3; }
+    .form-control:focus { background:#fff; border-color:#9a6cc4; box-shadow:0 0 0 4px rgba(123,63,196,.12); }
+    input[type=checkbox], input[type=radio] { accent-color:var(--purple); }
+    .catalog-item, .quiz-question-card { border-radius:16px; border-color:var(--border); box-shadow:0 1px 2px rgba(33,19,45,.03); }
+    .lead-delete-btn { border-radius:10px; }
+    .leads-table-wrap { border-radius:16px; }
+    .leads-table th { background:#faf8fc; }
+    .status-pill { border-radius:999px; }
+
+    /* Dashboard */
+    .viz-filters { gap:10px; margin-bottom:18px; }
+    .viz-filters select, .viz-filters input { height:40px; border-radius:12px; border-color:var(--border); background:#fff; box-shadow:0 1px 2px rgba(33,19,45,.04); }
+    .segmented { display:inline-flex; padding:4px; gap:2px; border-radius:13px; background:#fff; border:1px solid var(--border); box-shadow:0 1px 2px rgba(33,19,45,.04); }
+    .segmented button { border:0; background:transparent; font:inherit; font-size:12.5px; font-weight:650; color:var(--purple); padding:7px 13px; border-radius:10px; cursor:pointer; transition:background .15s, color .15s, box-shadow .15s; }
+    .segmented button.on { background:var(--purple); color:#fff; box-shadow:0 4px 12px rgba(86,32,139,.28); }
+    .segmented button:not(.on):hover { background:var(--purple-soft); }
+    .kpi-grid { gap:16px; margin-bottom:20px; }
+    .kpi { position:relative; border-radius:var(--radius-lg); padding:20px 20px 18px; border:1px solid rgba(235,230,241,.9); overflow:hidden; transition:transform .2s ease, box-shadow .2s ease; }
+    .kpi:hover { transform:translateY(-2px); box-shadow:var(--shadow-hover); }
+    .kpi-icon { position:absolute; top:18px; right:18px; width:44px; height:44px; border-radius:14px; display:grid; place-items:center; }
+    .kpi-icon .icon { width:20px; height:20px; stroke-width:2; }
+    .tone-purple { background:var(--purple-soft); color:var(--purple); } .tone-amber { background:var(--amber-soft); color:#a76a05; }
+    .tone-green { background:var(--green-soft); color:#137a4b; } .tone-blue { background:var(--blue-soft); color:#3b4fb0; }
+    .tone-rose { background:var(--rose-soft); color:#b4235a; } .tone-teal { background:var(--teal-soft); color:#127a73; }
+    .kpi-value { font-size:30px; font-weight:800; letter-spacing:-.035em; margin-top:0; padding-right:54px; }
+    .kpi-label { font-size:13px; color:#4f4659; font-weight:600; margin-top:3px; padding-right:54px; }
+    .kpi-sub { font-size:11.5px; margin-top:4px; }
+    .kpi-delta { font-size:11.5px; margin-top:12px; padding:3px 9px; border-radius:999px; background:#f5f3f8; }
+    .kpi-delta.up { background:#e6f6ee; } .kpi-delta.down { background:#fdecec; }
+    #anPerf .kpi { box-shadow:none; background:var(--purple-softer); border-color:#efe8f6; }
+    #anPerf .kpi:hover { transform:none; }
+    .hbar-track { background:#f6f3fa; border-radius:6px; height:10px; }
+    .hbar-fill { border-radius:6px; animation:grow .7s cubic-bezier(.2,.8,.2,1); transform-origin:left; }
+    @keyframes grow { from { transform:scaleX(0); } to { transform:scaleX(1); } }
+    .heatmap .cell { border-radius:4px; transition:transform .12s; } .heatmap .cell:hover { transform:scale(1.25); }
+    .viz-tip { border-radius:12px; box-shadow:0 14px 34px rgba(33,19,45,.16); }
+    .viz-table th { text-transform:uppercase; letter-spacing:.05em; font-size:10.5px; }
+    .viz-table tbody tr { transition:background .12s; } .viz-table tbody tr:hover { background:#faf8fc; }
+    .chip-filter { border-radius:999px; padding:7px 13px; font-weight:600; }
+    .conv-item { border-radius:15px; transition:border-color .15s, box-shadow .15s, transform .15s; }
+    .conv-item:hover { transform:translateY(-1px); box-shadow:var(--shadow); }
+    .transcript { border-radius:16px; background:linear-gradient(180deg,#fbf9fd,#f5f1fa); }
+    .t-msg.user { background:linear-gradient(145deg,#6a2ba8,#56208b); }
+
+    /* Loading states */
+    .skeleton { position:relative; overflow:hidden; background:#efeaf5; border-radius:10px; }
+    .skeleton::after { content:""; position:absolute; inset:0; transform:translateX(-100%); background:linear-gradient(90deg,transparent,rgba(255,255,255,.8),transparent); animation:shimmer 1.3s infinite; }
+    @keyframes shimmer { to { transform:translateX(100%); } }
+    .sk-line { height:12px; margin:9px 0; } .sk-big { height:30px; width:55%; margin:2px 0 12px; } .sk-chart { height:220px; border-radius:14px; }
+    .sk-row { height:64px; border-radius:15px; margin-bottom:8px; }
+    .is-refreshing { opacity:.55; transition:opacity .2s; pointer-events:none; }
+    #topProgress { position:fixed; top:0; left:0; height:3px; width:0; z-index:100; background:linear-gradient(90deg,#7b3fc4,#d58b12); box-shadow:0 0 10px rgba(123,63,196,.5); transition:width .35s ease, opacity .4s ease; opacity:0; border-radius:0 3px 3px 0; }
+    .toast-stack { position:fixed; right:22px; bottom:22px; z-index:120; display:flex; flex-direction:column; gap:10px; max-width:380px; }
+    .toast { display:flex; gap:11px; align-items:flex-start; padding:13px 15px; border-radius:15px; background:#fff; border:1px solid var(--border); box-shadow:0 16px 38px rgba(33,19,45,.16); font-size:13px; line-height:1.45; color:var(--text); animation:toast-in .25s cubic-bezier(.2,.8,.2,1); }
+    .toast.leaving { animation:toast-out .2s ease forwards; }
+    .toast i { width:22px; height:22px; border-radius:50%; display:grid; place-items:center; font-style:normal; font-weight:800; font-size:12px; flex:none; }
+    .toast.success i { background:var(--green-soft); color:#137a4b; } .toast.error i { background:#fdecec; color:#b42318; } .toast.info i { background:var(--purple-soft); color:var(--purple); }
+    @keyframes toast-in { from { opacity:0; transform:translateY(10px) scale(.98); } to { opacity:1; transform:none; } }
+    @keyframes toast-out { to { opacity:0; transform:translateY(6px); } }
+    #bootLoader { position:fixed; inset:0; z-index:200; display:grid; place-items:center; background:var(--bg); transition:opacity .35s ease; }
+    #bootLoader .boot-mark { width:58px; height:58px; margin:0 auto; border-radius:18px; display:grid; place-items:center; background:linear-gradient(145deg,#8a4fd0,#56208b); color:#fff; box-shadow:0 14px 30px rgba(86,32,139,.3); animation:boot-bob 1.2s ease-in-out infinite; }
+    #bootLoader .boot-mark .icon { width:28px; height:28px; }
+    #bootLoader p { margin-top:16px; text-align:center; font-size:13px; color:var(--muted); font-weight:600; }
+    @keyframes boot-bob { 0%,100% { transform:translateY(0); } 50% { transform:translateY(-6px); } }
+
+    .content-area::-webkit-scrollbar, .nav-tabs::-webkit-scrollbar, .conv-list::-webkit-scrollbar, .transcript::-webkit-scrollbar { width:8px; }
+    .content-area::-webkit-scrollbar-thumb, .nav-tabs::-webkit-scrollbar-thumb, .conv-list::-webkit-scrollbar-thumb, .transcript::-webkit-scrollbar-thumb { background:#ddd3e8; border-radius:8px; }
+    @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation:none !important; transition:none !important; } }
+    @media (max-width:980px) { .top-chip { display:none; } }
+    @media (max-width:640px) {
+      body { padding:10px; display:block; }
+      .sidebar { width:100%; border-radius:18px; margin:0 0 12px; }
+      .brand { padding:12px 14px; font-size:16px; } .brand small, .nav-section, .side-status { display:none; }
+      .nav-tabs { display:flex; padding:8px; overflow-x:auto; gap:4px; } .nav-item { white-space:nowrap; padding:8px 11px; }
+      .topbar { padding:0; } .top-search { max-width:none; } .top-avatar { display:none; }
+      .page-head h1 { font-size:22px; } .card { padding:18px 16px; border-radius:16px; }
+      .kpi-grid { grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; } .kpi { padding:14px; } .kpi-value { font-size:22px; padding-right:0; } .kpi-label { padding-right:0; } .kpi-icon { display:none; }
+      .content-area { padding:0 0 30px; }
+    }
   </style>
 </head>
 <body>
+  <div id="topProgress" aria-hidden="true"></div>
+  <div class="toast-stack" id="toastStack" aria-live="polite"></div>
+  <div id="bootLoader"><div><div class="boot-mark"><svg class="icon"><use href="#i-grapes"></use></svg></div><p>Loading your control panel…</p></div></div>
+  <div class="viz-tip" id="vizTip" role="tooltip"></div>
 
   <svg aria-hidden="true" focusable="false" width="0" height="0" style="position:absolute;overflow:hidden">
     <symbol id="i-grapes" viewBox="0 0 24 24"><circle cx="8" cy="8" r="2.2"/><circle cx="14" cy="7" r="2.2"/><circle cx="5.5" cy="13" r="2.2"/><circle cx="11.5" cy="13" r="2.2"/><circle cx="17.5" cy="13" r="2.2"/><circle cx="8.5" cy="18" r="2.2"/><circle cx="14.5" cy="18" r="2.2"/><path d="M11 4c.6-1.6 2-2.4 4-2"/></symbol>
@@ -131,6 +418,17 @@
     <symbol id="i-globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15 15 0 0 1 0 20M12 2a15 15 0 0 0 0 20"/></symbol>
     <symbol id="i-search" viewBox="0 0 24 24"><circle cx="10.8" cy="10.8" r="7.3"/><path d="m16.2 16.2 4.3 4.3M8 10.8h5.6M10.8 8v5.6"/></symbol>
     <symbol id="i-file" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M8 13h8M8 17h8"/></symbol>
+    <symbol id="i-chart" viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="m7 15 4-5 4 3 5-7"/></symbol>
+    <symbol id="i-chat" viewBox="0 0 24 24"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20.5l1.4-4.9A8 8 0 1 1 21 12Z"/></symbol>
+    <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 3v12m-5-5 5 5 5-5"/><path d="M5 21h14"/></symbol>
+    <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol>
+    <symbol id="i-calendar" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="m8 12 3 3 5-6"/></symbol>
+    <symbol id="i-headset" viewBox="0 0 24 24"><path d="M4 14v-2a8 8 0 0 1 16 0v2"/><rect x="2.5" y="14" width="4.5" height="6" rx="1.5"/><rect x="17" y="14" width="4.5" height="6" rx="1.5"/></symbol>
+    <symbol id="i-flame" viewBox="0 0 24 24"><path d="M12 22a7 7 0 0 0 7-7c0-4-3-6-4-10-2 2-3 4-3 6-1-1-2-2-2-4-2 2-5 5-5 8a7 7 0 0 0 7 7Z"/></symbol>
+    <symbol id="i-target" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/></symbol>
+    <symbol id="i-bot" viewBox="0 0 24 24"><rect x="4" y="8" width="16" height="12" rx="3"/><path d="M12 4v4M9 13h.01M15 13h.01M9 17h6"/></symbol>
+    <symbol id="i-palette" viewBox="0 0 24 24"><path d="M12 3a9 9 0 0 0 0 18c1.1 0 1.6-.8 1.6-1.6 0-.5-.2-.8-.4-1.1-.3-.3-.4-.6-.4-1 0-.9.7-1.6 1.6-1.6H16a5 5 0 0 0 5-5c0-4.3-4-7.7-9-7.7Z"/><circle cx="7.5" cy="11" r="1.2"/><circle cx="10" cy="7" r="1.2"/><circle cx="14.5" cy="7" r="1.2"/></symbol>
     <symbol id="i-users" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></symbol>
   </svg>
 
@@ -138,27 +436,45 @@
   <div class="sidebar">
     <div class="brand">
       <span class="brand-mark"><svg class="icon"><use href="#i-grapes"></use></svg></span>
-      <span>GrapeLabs</span>
+      <span><span id="sideBrandName">GrapeLabs</span><small>AI assistant control panel</small></span>
     </div>
     <ul class="nav-tabs">
-      <li class="nav-item active" onclick="switchTab('settings')"><svg class="icon"><use href="#i-settings"></use></svg><span>Settings & AI key</span></li>
-      <li class="nav-item" onclick="switchTab('products')"><svg class="icon"><use href="#i-file"></use></svg><span>Products</span></li>
-      <li class="nav-item" onclick="switchTab('nudges')"><svg class="icon"><use href="#i-sparkles"></use></svg><span>Nudges</span></li>
-      <li class="nav-item" onclick="switchTab('quiz')"><svg class="icon"><use href="#i-book"></use></svg><span>Quiz</span></li>
-      <li class="nav-item" onclick="switchTab('personality')"><svg class="icon"><use href="#i-sparkles"></use></svg><span>Personality</span></li>
-      <li class="nav-item" onclick="switchTab('handover')"><svg class="icon"><use href="#i-users"></use></svg><span>Human handover</span></li>
-      <li class="nav-item" onclick="switchTab('leadcapture')"><svg class="icon"><use href="#i-users"></use></svg><span>Lead capture</span></li>
-      <li class="nav-item" onclick="switchTab('engage')"><svg class="icon"><use href="#i-sparkles"></use></svg><span>Quick actions & recommendations</span></li>
-      <li class="nav-item" onclick="switchTab('knowledge')"><svg class="icon"><use href="#i-book"></use></svg><span>Business data & CAG</span></li>
+      <li class="nav-section">Overview</li>
+      <li class="nav-item active" onclick="switchTab('analytics')"><svg class="icon"><use href="#i-chart"></use></svg><span>Dashboard</span></li>
+      <li class="nav-item" onclick="switchTab('conversations')"><svg class="icon"><use href="#i-chat"></use></svg><span>Conversations</span></li>
       <li class="nav-item" onclick="switchTab('leads')"><svg class="icon"><use href="#i-users"></use></svg><span>Leads</span></li>
+      <li class="nav-section">Assistant</li>
+      <li class="nav-item" onclick="switchTab('customise')"><svg class="icon"><use href="#i-palette"></use></svg><span>Customise</span></li>
+      <li class="nav-item" onclick="switchTab('personality')"><svg class="icon"><use href="#i-bot"></use></svg><span>Personality</span></li>
+      <li class="nav-item" onclick="switchTab('products')"><svg class="icon"><use href="#i-file"></use></svg><span>Products</span></li>
+      <li class="nav-item" onclick="switchTab('engage')"><svg class="icon"><use href="#i-target"></use></svg><span>Quick actions &amp; picks</span></li>
+      <li class="nav-item" onclick="switchTab('quiz')"><svg class="icon"><use href="#i-book"></use></svg><span>Quiz</span></li>
+      <li class="nav-item" onclick="switchTab('nudges')"><svg class="icon"><use href="#i-sparkles"></use></svg><span>Nudges</span></li>
+      <li class="nav-section">Leads &amp; support</li>
+      <li class="nav-item" onclick="switchTab('leadcapture')"><svg class="icon"><use href="#i-check"></use></svg><span>Lead capture</span></li>
+      <li class="nav-item" onclick="switchTab('handover')"><svg class="icon"><use href="#i-headset"></use></svg><span>Human handover</span></li>
+      <li class="nav-section">Knowledge</li>
+      <li class="nav-item" onclick="switchTab('knowledge')"><svg class="icon"><use href="#i-book"></use></svg><span>Business data & CAG</span></li>
       <li class="nav-item" onclick="switchTab('prompt')"><svg class="icon"><use href="#i-sparkles"></use></svg><span>AI prompt</span></li>
+      <li class="nav-section">System</li>
+      <li class="nav-item" onclick="switchTab('settings')"><svg class="icon"><use href="#i-settings"></use></svg><span>Settings & AI key</span></li>
     </ul>
+    <div class="side-status"><strong><span class="live-dot" id="sideLiveDot"></span><span id="sideStatusText">Bot is live</span></strong><small id="sideStatusSub">Live config</small></div>
   </div>
 
   <!-- Main Content -->
   <div class="main">
     <div class="topbar">
-      <div class="topbar-title" id="pageTitle">Settings & Configuration</div>
+      <label class="top-search"><svg class="icon"><use href="#i-search"></use></svg><input id="topSearch" type="search" placeholder="Search conversations, names, emails…" aria-label="Search conversations"><kbd>/</kbd></label>
+      <div style="display:flex;align-items:center;gap:12px">
+        <span class="top-chip"><span class="chip-icon"><svg class="icon"><use href="#i-bot"></use></svg></span><span id="topBrandName">GrapeLabs</span><span class="live-dot" id="topLiveDot"></span></span>
+        <span class="top-avatar" id="topAvatar" title="Admin">GL</span>
+      </div>
+    </div>
+
+    <div class="content-area">
+    <div class="page-head">
+      <div><h1 id="pageTitle">Dashboard</h1><p id="pageSubtitle">Monitor your AI assistant’s performance, engagement and leads</p></div>
       <div class="topbar-actions">
         <a id="localDemoLink" href="/demo" class="btn btn-secondary" style="display:none"><svg class="icon"><use href="#i-globe"></use></svg>Preview bot</a>
         <a id="viewWidgetLink" href="https://grapelabs.in" class="btn btn-secondary" target="_blank" rel="noopener"><svg class="icon"><use href="#i-external"></use></svg>View website</a>
@@ -166,10 +482,8 @@
       </div>
     </div>
 
-    <div class="content-area">
-
       <!-- TAB 1: Settings & OpenAI -->
-      <div class="tab-content active" id="tab-settings">
+      <div class="tab-content" id="tab-settings">
         <!-- OpenAI Connection Card -->
         <div class="card" style="border: 2px solid #E2D7F3; background: #FAF7FD;">
           <div class="card-title">
@@ -318,6 +632,138 @@
           <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:12px 0"><button class="btn btn-secondary" type="button" id="generateQuizButton" onclick="generateQuizWithAI(this)"><svg class="icon"><use href="#i-sparkles"></use></svg><span>Generate questions with AI</span></button><span id="quizStatus" role="status" style="font-size:12px;color:#666"></span></div>
           <div id="quizQuestionEditor"></div>
           <button class="btn btn-secondary" type="button" onclick="addQuizQuestion()">Add question</button>
+        </div>
+      </div>
+
+      <!-- Customise: chat widget appearance -->
+      <div class="tab-content" id="tab-customise">
+        <div class="cz-layout">
+          <div>
+            <div class="card">
+              <div class="card-title"><span><svg class="icon"><use href="#i-palette"></use></svg>Theme & colours</span><button class="btn btn-primary" onclick="saveAppearance()"><svg class="icon"><use href="#i-save"></use></svg>Save to draft</button></div>
+              <div class="form-label" style="margin-bottom:8px">Colour presets</div>
+              <div class="cz-presets" id="czPresets"></div>
+              <div class="form-grid" style="margin-bottom:14px">
+                <div class="form-group"><span class="form-label">Theme</span><div class="segmented cz-seg" id="czTheme"><button type="button" data-v="light">Light</button><button type="button" data-v="dark">Dark</button><button type="button" data-v="auto">Match device</button></div></div>
+                <div class="form-group"><span class="form-label">Header style</span><div class="segmented cz-seg" id="czHeaderStyle"><button type="button" data-v="gradient">Gradient</button><button type="button" data-v="solid">Solid</button></div></div>
+              </div>
+              <div class="cz-colors" id="czColors"></div>
+            </div>
+
+            <div class="card">
+              <div class="card-title"><span><svg class="icon"><use href="#i-bot"></use></svg>Branding & avatar</span><button class="btn btn-primary" onclick="saveAppearance()"><svg class="icon"><use href="#i-save"></use></svg>Save to draft</button></div>
+              <div class="form-grid">
+                <label class="form-group" style="grid-column:1/-1"><span class="form-label">Assistant avatar image URL (leave empty to use your logo)</span><input class="form-control" id="czAvatarUrl" placeholder="https://yoursite.com/avatar.png"></label>
+                <div class="form-group"><span class="form-label">Avatar shape</span><div class="segmented cz-seg" id="czAvatarShape"><button type="button" data-v="circle">Circle</button><button type="button" data-v="rounded">Rounded square</button></div></div>
+                <div class="form-group"><label class="form-label" for="czFont">Font</label><select class="form-control" id="czFont"><option value="system">System (fastest)</option><option value="inter">Inter</option><option value="poppins">Poppins</option><option value="dm-sans">DM Sans</option><option value="nunito">Nunito</option></select></div>
+                <label class="form-group"><span class="form-label">Footer</span><span><input type="checkbox" id="czShowPowered" checked> Show “Powered by” line</span></label>
+                <label class="form-group"><span class="form-label">“Powered by” name</span><input class="form-control" id="czPoweredBy" maxlength="40" placeholder="GrapeLabs"></label>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-title"><span><svg class="icon"><use href="#i-chat"></use></svg>Launcher & layout</span><button class="btn btn-primary" onclick="saveAppearance()"><svg class="icon"><use href="#i-save"></use></svg>Save to draft</button></div>
+              <div class="form-grid">
+                <div class="form-group"><span class="form-label">Launcher button</span><div class="segmented cz-seg" id="czLauncherStyle"><button type="button" data-v="logo">Logo</button><button type="button" data-v="icon">Chat icon</button><button type="button" data-v="avatar">Avatar</button></div></div>
+                <div class="form-group"><span class="form-label">Icon</span><div class="segmented cz-seg" id="czLauncherIcon"><button type="button" data-v="chat">Chat</button><button type="button" data-v="sparkle">Sparkle</button><button type="button" data-v="headset">Support</button></div></div>
+                <label class="form-group"><span class="form-label">Launcher text (optional)</span><input class="form-control" id="czLauncherLabel" maxlength="30" placeholder="e.g. Chat with us"></label>
+                <div class="form-group"><span class="form-label">Launcher size</span><div class="segmented cz-seg" id="czLauncherSize"><button type="button" data-v="sm">Small</button><button type="button" data-v="md">Medium</button><button type="button" data-v="lg">Large</button></div></div>
+                <div class="form-group"><span class="form-label">Position</span><div class="segmented cz-seg" id="czPosition"><button type="button" data-v="left">Bottom left</button><button type="button" data-v="right">Bottom right</button></div></div>
+                <div class="form-group"><label class="form-label" for="czOffsetX">Distance from side / bottom (px)</label><div style="display:flex;gap:8px"><input class="form-control" id="czOffsetX" type="number" min="0" max="200" value="24"><input class="form-control" id="czOffsetY" type="number" min="0" max="200" value="24"></div></div>
+                <div class="form-group"><span class="form-label">Chat window width</span><div class="segmented cz-seg" id="czPanelWidth"><button type="button" data-v="compact">Compact</button><button type="button" data-v="standard">Standard</button><button type="button" data-v="wide">Wide</button></div></div>
+                <div class="form-group"><span class="form-label">Corners</span><div class="segmented cz-seg" id="czCorners"><button type="button" data-v="rounded">Rounded</button><button type="button" data-v="soft">Soft</button><button type="button" data-v="square">Sharp</button></div></div>
+                <div class="form-group"><span class="form-label">Message bubbles</span><div class="segmented cz-seg" id="czBubbleStyle"><button type="button" data-v="rounded">Rounded</button><button type="button" data-v="square">Squared</button></div></div>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-title"><span><svg class="icon"><use href="#i-sparkles"></use></svg>Welcome messages</span><button class="btn btn-primary" onclick="saveAppearance()"><svg class="icon"><use href="#i-save"></use></svg>Save to draft</button></div>
+              <p style="font-size:12.5px;color:var(--muted);margin:-6px 0 14px">Leave any field empty to keep the current default.</p>
+              <div class="form-grid">
+                <label class="form-group"><span class="form-label">Welcome heading</span><input class="form-control" id="czWelcomeHeading" maxlength="60" placeholder="How can we help?"></label>
+                <label class="form-group"><span class="form-label">Start button title</span><input class="form-control" id="czStartTitle" maxlength="40" placeholder="Send us a message"></label>
+                <label class="form-group" style="grid-column:1/-1"><span class="form-label">Welcome message</span><textarea class="form-control" id="czWelcomeMessage" maxlength="300" style="min-height:76px" placeholder="Ask us anything about our services, process, or how we can help your business."></textarea></label>
+                <label class="form-group"><span class="form-label">Start button subtitle</span><input class="form-control" id="czStartSubtitle" maxlength="60" placeholder="We typically reply instantly"></label>
+                <label class="form-group"><span class="form-label">Message box placeholder</span><input class="form-control" id="czPlaceholder" maxlength="60" placeholder="Message us about your business..."></label>
+                <label class="form-group" style="grid-column:1/-1"><span class="form-label">Note shown at the top of the chat</span><input class="form-control" id="czDisclaimer" maxlength="120" placeholder="AI can make mistakes. A teammate can step in anytime."></label>
+                <label class="form-group"><span class="form-label">Contact links</span><span><input type="checkbox" id="czShowContacts" checked> Show WhatsApp / Instagram links on the welcome screen</span></label>
+              </div>
+            </div>
+          </div>
+
+          <div class="cz-preview-col">
+            <div class="card" style="padding:18px">
+              <div class="card-title" style="margin-bottom:12px"><span><svg class="icon"><use href="#i-eye"></use></svg>Live preview</span><div class="segmented" id="czPreviewView"><button type="button" data-v="welcome" class="on">Welcome</button><button type="button" data-v="chat">Chat</button></div></div>
+              <div class="cz-stage" id="czStage"></div>
+              <p style="font-size:11.5px;color:var(--muted);margin-top:10px">Preview of your widget. Save to draft, then publish to update your website.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Analytics dashboard -->
+      <div class="tab-content viz-root active" id="tab-analytics">
+        <div class="viz-filters">
+          <div class="segmented" id="anDaysSeg" aria-label="Date range"><button type="button" data-days="7">7 days</button><button type="button" data-days="30" class="on">30 days</button><button type="button" data-days="90">90 days</button><button type="button" data-days="365">12 months</button></div>
+          <select id="anDays" onchange="loadAnalytics()" aria-label="Date range" hidden><option value="7">Last 7 days</option><option value="30" selected>Last 30 days</option><option value="90">Last 90 days</option><option value="365">Last 12 months</option></select>
+          <select id="anChannel" onchange="loadAnalytics()" aria-label="Channel"><option value="all">All channels</option><option value="web">Website</option><option value="whatsapp">WhatsApp</option><option value="instagram">Instagram</option></select>
+          <button class="btn btn-secondary" type="button" onclick="loadAnalytics()">Refresh</button>
+          <span class="viz-updated" id="anUpdated"></span>
+        </div>
+        <div class="kpi-grid" id="anKpis"></div>
+
+        <div class="card">
+          <div class="card-title"><span><svg class="icon"><use href="#i-chart"></use></svg>Conversations & leads per day</span><button class="link-btn" type="button" onclick="toggleTrendTable()" id="anTrendToggle">View as table</button></div>
+          <div class="viz-legend"><span><i class="viz-key" style="background:var(--series-1)"></i>Conversations</span><span><i class="viz-key" style="background:var(--series-2)"></i>Leads</span></div>
+          <div class="viz-chart" id="anTrend"></div>
+          <div id="anTrendTable" style="display:none;max-height:300px;overflow:auto"></div>
+        </div>
+
+        <div class="viz-row">
+          <div class="card"><div class="card-title"><span><svg class="icon"><use href="#i-users"></use></svg>Lead funnel</span></div><div id="anFunnel"></div></div>
+          <div class="card"><div class="card-title"><span><svg class="icon"><use href="#i-sparkles"></use></svg>Chatbot performance</span></div><div class="kpi-grid" id="anPerf" style="margin:0;grid-template-columns:repeat(2,1fr)"></div></div>
+        </div>
+
+        <div class="viz-row">
+          <div class="card"><div class="card-title"><span>Channels</span></div><div id="anChannels"></div></div>
+          <div class="card"><div class="card-title"><span>Traffic sources</span></div><div id="anSources"></div></div>
+          <div class="card"><div class="card-title"><span>What visitors wanted</span></div><div id="anIntents"></div></div>
+        </div>
+
+        <div class="card">
+          <div class="card-title"><span>When visitors chat</span><span style="font-size:12px;color:var(--muted);font-weight:500">Visitor messages by day and hour (your time)</span></div>
+          <div id="anHeatmap"></div>
+        </div>
+
+        <div class="viz-row">
+          <div class="card"><div class="card-title"><span>Most asked questions</span></div><div id="anTopQuestions"></div></div>
+          <div class="card"><div class="card-title"><span>Questions the bot couldn't answer</span></div><p style="font-size:12px;color:var(--muted);margin:-6px 0 8px">Add these to your FAQs or business knowledge to improve answers.</p><div id="anUnanswered"></div></div>
+        </div>
+
+        <div class="card"><div class="card-title"><span>Products shown in chat</span></div><div id="anProducts"></div></div>
+
+        <div class="card">
+          <div class="card-title"><span><svg class="icon"><use href="#i-users"></use></svg>Lead tracking</span><button class="btn btn-secondary" type="button" onclick="exportLeadsCsv()"><svg class="icon"><use href="#i-download"></use></svg>Export CSV</button></div>
+          <div style="overflow:auto;max-height:520px" id="anLeads"></div>
+        </div>
+      </div>
+
+      <!-- Chat history -->
+      <div class="tab-content" id="tab-conversations">
+        <div class="viz-filters">
+          <input type="search" id="convSearch" placeholder="Search messages, names, emails, phone numbers…" style="flex:1;min-width:220px" aria-label="Search conversations">
+          <select id="convDays" onchange="loadConversations()" aria-label="Date range"><option value="7">Last 7 days</option><option value="30">Last 30 days</option><option value="90" selected>Last 90 days</option><option value="all">All time</option></select>
+          <select id="convChannel" onchange="loadConversations()" aria-label="Channel"><option value="all">All channels</option><option value="web">Website</option><option value="whatsapp">WhatsApp</option><option value="instagram">Instagram</option></select>
+          <button class="btn btn-secondary" type="button" onclick="exportConversationsCsv()"><svg class="icon"><use href="#i-download"></use></svg>Export CSV</button>
+        </div>
+        <div class="chip-filters" id="convFilters" style="margin-bottom:14px"></div>
+        <div class="conv-layout">
+          <div>
+            <div style="font-size:12px;color:var(--muted);margin-bottom:8px" id="convCount"></div>
+            <div class="conv-list" id="convList"></div>
+            <button class="btn btn-secondary" type="button" id="convMore" style="display:none;margin-top:10px;width:100%" onclick="loadConversations(true)">Load more</button>
+          </div>
+          <div class="card" style="margin:0" id="convDetail"><div class="viz-empty">Select a conversation to read the full transcript.</div></div>
         </div>
       </div>
 
@@ -625,6 +1071,23 @@
       document.getElementById('localDemoLink').style.display = 'inline-flex';
     }
 
+    const PAGE_HEADS = {
+      analytics: ['Dashboard', 'Monitor your AI assistant\u2019s performance, engagement and leads'],
+      conversations: ['Conversations', 'Search and read every chat across website, WhatsApp and Instagram'],
+      leads: ['Leads', 'Everyone who shared their details, with your own notes and columns'],
+      customise: ['Customise', 'Colours, theme, branding, layout, welcome messages and avatar of your chat widget'],
+      personality: ['Personality', 'Define how your assistant sounds, behaves and represents your brand'],
+      products: ['Products', 'The catalog your assistant recommends and shows in chat'],
+      engage: ['Quick actions & recommendations', 'Conversation starters, shortcut buttons and personalised product picks'],
+      quiz: ['Discovery quiz', 'Guided questions that match visitors to the right products'],
+      nudges: ['Nudges', 'Gentle, context-aware next steps during a conversation'],
+      leadcapture: ['Lead capture', 'When and how the assistant asks visitors for their details'],
+      handover: ['Human handover', 'Pass conversations to your team on WhatsApp with full context'],
+      knowledge: ['Business data & CAG', 'The knowledge your assistant answers from'],
+      prompt: ['AI prompt', 'Fine-tune the core instructions behind every reply'],
+      settings: ['Settings', 'Brand details, AI key, channels and alerts']
+    };
+
     function switchTab(tabId) {
       document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
       document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
@@ -635,8 +1098,13 @@
       const targetTab = document.getElementById(`tab-${tabId}`);
       if (targetTab) targetTab.classList.add('active');
 
-      document.getElementById('pageTitle').innerText = targetNav ? targetNav.innerText : 'Control Panel';
+      const head = PAGE_HEADS[tabId] || [targetNav ? targetNav.innerText : 'Control panel', ''];
+      document.getElementById('pageTitle').textContent = head[0];
+      document.getElementById('pageSubtitle').textContent = head[1];
+      document.querySelector('.content-area').scrollTop = 0;
       if (tabId === 'leads') loadLeads();
+      if (tabId === 'analytics') loadAnalytics();
+      if (tabId === 'conversations' && !conversationState.loaded) loadConversations();
     }
 
     async function loadConfig() {
@@ -777,6 +1245,7 @@
     });
 
     function populateUI(cfg, openAiData = {}) {
+      try { updateShellStatus(cfg); } catch (_) {}
       // OpenAI Data
       if (openAiData.hasKey) {
         document.getElementById('openAiStatusBadge').className = 'status-pill status-connected';
@@ -829,6 +1298,7 @@
       populateEngagementUI(cfg);
       loadLeadCaptureSettings();
       populatePersonality(cfg);
+      populateAppearance(cfg);
       populateHandover(cfg);
 
 
@@ -1214,6 +1684,486 @@
         output.style.display = 'block';
         status.textContent = 'AI-generated from these settings. Save settings to Draft to keep changes.';
       } catch (error) { status.textContent = error.message; }
+    }
+
+    // ===== Customise: chat widget appearance =====
+    const CZ_BRAND_COLORS = { primary: '#4A1080', header: '#1C0A30', highlight: '#D4880A', background: '#FBF9FD' };
+    const CZ_PRESETS = {
+      brand: { label: 'Brand (current)', colors: CZ_BRAND_COLORS },
+      ocean: { label: 'Ocean', colors: { primary: '#1D6FD1', header: '#0B2545', highlight: '#13B5A6', background: '#F5F9FE' } },
+      forest: { label: 'Forest', colors: { primary: '#1F7A4D', header: '#0F2A1D', highlight: '#E0A526', background: '#F6FAF7' } },
+      sunset: { label: 'Sunset', colors: { primary: '#D9472E', header: '#2B1430', highlight: '#F2A541', background: '#FFF8F4' } },
+      midnight: { label: 'Midnight', colors: { primary: '#6D4AFF', header: '#0E0B1F', highlight: '#22D3EE', background: '#F6F5FF' } },
+      minimal: { label: 'Minimal', colors: { primary: '#111827', header: '#111827', highlight: '#6B7280', background: '#FFFFFF' } }
+    };
+    const CZ_COLOR_FIELDS = [
+      ['primary', 'Primary', 'Buttons, visitor messages, chips'],
+      ['header', 'Header', 'Header, welcome banner, launcher'],
+      ['highlight', 'Highlight', 'Send button, accents, launcher ring'],
+      ['background', 'Background', 'Chat window background (light theme)']
+    ];
+    const CZ_SEGMENTS = { czTheme: 'theme', czHeaderStyle: 'headerStyle', czAvatarShape: 'avatarShape', czLauncherStyle: 'launcherStyle', czLauncherIcon: 'launcherIcon', czLauncherSize: 'launcherSize', czPosition: 'position', czPanelWidth: 'panelWidth', czCorners: 'corners', czBubbleStyle: 'bubbleStyle' };
+    const CZ_TEXT = { czAvatarUrl: 'avatarUrl', czFont: 'font', czPoweredBy: 'poweredByText', czLauncherLabel: 'launcherLabel', czOffsetX: 'offsetX', czOffsetY: 'offsetY', czWelcomeHeading: 'welcomeHeading', czStartTitle: 'startTitle', czWelcomeMessage: 'welcomeMessage', czStartSubtitle: 'startSubtitle', czPlaceholder: 'inputPlaceholder', czDisclaimer: 'disclaimer' };
+    let czState = null;
+    let czView = 'welcome';
+    const czHex = value => /^#([0-9a-f]{6})$/i.test(String(value || '').trim());
+    function czShade(hex, amount) {
+      const h = hex.replace('#', '');
+      const mix = c => Math.round(amount < 0 ? c * (1 + amount) : c + (255 - c) * amount);
+      return '#' + [0, 2, 4].map(i => mix(parseInt(h.slice(i, i + 2), 16)).toString(16).padStart(2, '0')).join('');
+    }
+    function czReadable(hex) {
+      const h = hex.replace('#', '');
+      const [r, g, b] = [0, 2, 4].map(i => parseInt(h.slice(i, i + 2), 16) / 255).map(c => (c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4)));
+      return 0.2126 * r + 0.7152 * g + 0.0722 * b > 0.4 ? '#1A1A1A' : '#FFFFFF';
+    }
+
+    function populateAppearance(cfg) {
+      const a = cfg.draft?.appearance || cfg.appearance || {};
+      const colors = { ...CZ_BRAND_COLORS };
+      Object.entries(a.colors || {}).forEach(([key, value]) => { if (czHex(value)) colors[key] = value.toUpperCase(); });
+      czState = {
+        preset: a.preset || 'brand', theme: a.theme || 'light', headerStyle: a.headerStyle || 'gradient', colors,
+        avatarUrl: a.avatarUrl || '', avatarShape: a.avatarShape || 'circle', font: a.font || 'system',
+        showPoweredBy: a.showPoweredBy !== false, poweredByText: a.poweredByText || '',
+        launcherStyle: a.launcherStyle || 'logo', launcherIcon: a.launcherIcon || 'chat', launcherLabel: a.launcherLabel || '', launcherSize: a.launcherSize || 'md',
+        position: a.position || 'right', offsetX: a.offsetX ?? 24, offsetY: a.offsetY ?? 24,
+        panelWidth: a.panelWidth || 'standard', corners: a.corners || 'rounded', bubbleStyle: a.bubbleStyle || 'rounded',
+        welcomeHeading: a.welcomeHeading || '', welcomeMessage: a.welcomeMessage || '', startTitle: a.startTitle || '', startSubtitle: a.startSubtitle || '',
+        inputPlaceholder: a.inputPlaceholder || '', disclaimer: a.disclaimer || '', showContacts: a.showContacts !== false
+      };
+      Object.entries(CZ_TEXT).forEach(([id, key]) => {
+        const input = document.getElementById(id);
+        input.value = czState[key];
+        input.oninput = input.onchange = () => { czState[key] = input.type === 'number' ? Number(input.value) : input.value; renderCzPreview(); };
+      });
+      document.getElementById('czShowPowered').checked = czState.showPoweredBy;
+      document.getElementById('czShowPowered').onchange = event => { czState.showPoweredBy = event.target.checked; renderCzPreview(); };
+      document.getElementById('czShowContacts').checked = czState.showContacts;
+      document.getElementById('czShowContacts').onchange = event => { czState.showContacts = event.target.checked; renderCzPreview(); };
+      Object.entries(CZ_SEGMENTS).forEach(([id, key]) => {
+        document.querySelectorAll(`#${id} button`).forEach(button => {
+          button.classList.toggle('on', button.dataset.v === czState[key]);
+          button.onclick = () => {
+            czState[key] = button.dataset.v;
+            document.querySelectorAll(`#${id} button`).forEach(b => b.classList.toggle('on', b === button));
+            renderCzPreview();
+          };
+        });
+      });
+      document.querySelectorAll('#czPreviewView button').forEach(button => button.onclick = () => {
+        czView = button.dataset.v;
+        document.querySelectorAll('#czPreviewView button').forEach(b => b.classList.toggle('on', b === button));
+        renderCzPreview();
+      });
+      renderCzPresets();
+      renderCzColors();
+      renderCzPreview();
+    }
+
+    function renderCzPresets() {
+      document.getElementById('czPresets').innerHTML = Object.entries(CZ_PRESETS).map(([id, preset]) => `<button type="button" class="cz-preset ${czState.preset === id ? 'on' : ''}" data-preset="${id}"><div class="cz-swatches">${['header', 'primary', 'highlight', 'background'].map(k => `<i style="background:${preset.colors[k]};${k === 'background' ? 'border:1px solid #e5e1e9' : ''}"></i>`).join('')}</div><strong>${preset.label}</strong></button>`).join('');
+      document.querySelectorAll('#czPresets [data-preset]').forEach(button => button.onclick = () => {
+        czState.preset = button.dataset.preset;
+        czState.colors = { ...CZ_PRESETS[button.dataset.preset].colors };
+        renderCzPresets(); renderCzColors(); renderCzPreview();
+      });
+    }
+
+    function renderCzColors() {
+      document.getElementById('czColors').innerHTML = CZ_COLOR_FIELDS.map(([key, label, hint]) => `<label class="cz-color"><input type="color" data-cz-color="${key}" value="${czState.colors[key]}" aria-label="${label} colour"><div><strong>${label}</strong><small>${hint}</small></div><input class="form-control cz-hex" data-cz-hex="${key}" value="${czState.colors[key]}" maxlength="7" aria-label="${label} hex"></label>`).join('');
+      const markCustom = () => { czState.preset = 'custom'; document.querySelectorAll('#czPresets .cz-preset').forEach(b => b.classList.remove('on')); };
+      document.querySelectorAll('[data-cz-color]').forEach(input => input.addEventListener('input', () => {
+        czState.colors[input.dataset.czColor] = input.value.toUpperCase();
+        document.querySelector(`[data-cz-hex="${input.dataset.czColor}"]`).value = input.value.toUpperCase();
+        markCustom(); renderCzPreview();
+      }));
+      document.querySelectorAll('[data-cz-hex]').forEach(input => input.addEventListener('input', () => {
+        const value = input.value.trim().startsWith('#') ? input.value.trim() : `#${input.value.trim()}`;
+        if (!czHex(value)) return;
+        czState.colors[input.dataset.czHex] = value.toUpperCase();
+        document.querySelector(`[data-cz-color="${input.dataset.czHex}"]`).value = value;
+        markCustom(); renderCzPreview();
+      }));
+    }
+
+    function renderCzPreview() {
+      if (!czState) return;
+      const st = czState, c = st.colors;
+      const cfg = currentConfig || {};
+      const brand = cfg.draft?.branding?.brandName || cfg.branding?.brandName || cfg.name || 'GrapeLabs';
+      const tagline = cfg.draft?.branding?.brandTagline || cfg.branding?.brandTagline || 'Here to help';
+      const dark = st.theme === 'dark' || (st.theme === 'auto' && window.matchMedia?.('(prefers-color-scheme: dark)').matches);
+      const isBrandHeader = c.header.toUpperCase() === CZ_BRAND_COLORS.header.toUpperCase();
+      const t = dark
+        ? (isBrandHeader
+          ? { bg: '#120521', surface: '#1D0B33', text: '#F5EEFC', muted: '#B9A9CC', border: '#321654', subtle: '#25123D', chip: '#4A2475' }
+          : { bg: czShade(c.header, -0.55), surface: czShade(c.header, -0.3), text: '#F5EEFC', muted: '#B9A9CC', border: czShade(c.header, 0.1), subtle: czShade(c.header, -0.12), chip: czShade(c.header, 0.22) })
+        : { bg: c.background, surface: '#FFFFFF', text: c.header, muted: '#6B5D7B', border: czShade(c.primary, 0.88), subtle: czShade(c.primary, 0.93), chip: czShade(c.primary, 0.65) };
+      const ink2 = czShade(c.header, 0.12);
+      const stage = document.getElementById('czStage');
+      const vars = {
+        '--cz-bg': t.bg, '--cz-surface': t.surface, '--cz-text': t.text, '--cz-muted': t.muted, '--cz-border': t.border, '--cz-subtle': t.subtle, '--cz-chip': t.chip,
+        '--cz-primary': c.primary, '--cz-on-primary': czReadable(c.primary), '--cz-header': c.header, '--cz-hl': c.highlight,
+        '--cz-hero': st.headerStyle === 'solid' ? c.header : `linear-gradient(155deg, ${c.header} 0%, ${ink2} 55%, ${c.primary} 100%)`,
+        '--cz-chathead': st.headerStyle === 'solid' ? c.header : `linear-gradient(135deg, ${c.header}, ${ink2})`,
+        '--cz-w': { compact: '270px', standard: '300px', wide: '330px' }[st.panelWidth] || '300px',
+        '--cz-r': { rounded: '22px', soft: '15px', square: '7px' }[st.corners] || '22px',
+        '--cz-bub': st.bubbleStyle === 'square' ? '9px' : '16px', '--cz-bub-tail': st.bubbleStyle === 'square' ? '3px' : '16px',
+        '--cz-avr': st.avatarShape === 'rounded' ? '30%' : '50%',
+        '--cz-ls': { sm: '44px', md: '50px', lg: '56px' }[st.launcherSize] || '50px',
+        '--cz-launch-bg': st.launcherStyle === 'icon' ? c.primary : c.header,
+        '--cz-launch-border': st.launcherStyle === 'icon' ? 'transparent' : c.highlight,
+        '--cz-font': { system: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif', inter: 'Inter, sans-serif', poppins: 'Poppins, sans-serif', 'dm-sans': '"DM Sans", sans-serif', nunito: 'Nunito, sans-serif' }[st.font],
+        '--ox': `${Math.round(Math.min(60, Number(st.offsetX) || 0) * 0.75)}px`, '--oy': `${Math.round(Math.min(60, Number(st.offsetY) || 0) * 0.75)}px`
+      };
+      if (st.font !== 'system' && !document.getElementById(`cz-font-${st.font}`)) {
+        const fontLink = document.createElement('link');
+        fontLink.id = `cz-font-${st.font}`; fontLink.rel = 'stylesheet';
+        fontLink.href = `https://fonts.googleapis.com/css2?family=${{ inter: 'Inter', poppins: 'Poppins', 'dm-sans': 'DM+Sans', nunito: 'Nunito' }[st.font]}:wght@400;600;700&display=swap`;
+        document.head.appendChild(fontLink);
+      }
+      const avatarUrl = /^https?:\/\//i.test(st.avatarUrl) ? st.avatarUrl : (/^https?:\/\//i.test(cfg.branding?.logoUrl || '') ? cfg.branding.logoUrl : '');
+      const letter = escapeLeadCell(brand.trim().charAt(0).toUpperCase() || 'G');
+      const avatar = size => avatarUrl
+        ? `<span class="cz-av ${size}"><img src="${escapeLeadCell(avatarUrl)}" alt="" onerror="this.replaceWith(Object.assign(document.createElement('span'),{textContent:'${letter}'}))"></span>`
+        : `<span class="cz-av ${size}" style="background:${c.highlight};color:${c.header}">${letter}</span>`;
+      const logoMark = `<svg viewBox="0 0 36 36"><circle cx="18" cy="18" r="18" fill="${c.header}"/><circle cx="18" cy="11" r="4.5" fill="${c.highlight}"/><circle cx="12" cy="19" r="4.5" fill="${czShade(c.primary, 0.25)}"/><circle cx="24" cy="19" r="4.5" fill="${czShade(c.primary, 0.25)}"/><circle cx="18" cy="26" r="4.5" fill="${c.primary}"/></svg>`;
+      const icons = { chat: '<path d="M21 12a8 8 0 0 1-11.6 7.1L4 20.5l1.4-4.9A8 8 0 1 1 21 12Z"/>', sparkle: '<path d="M12 3Q13 11 21 12Q13 13 12 21Q11 13 3 12Q11 11 12 3Z"/>', headset: '<path d="M4 14v-2a8 8 0 0 1 16 0v2"/><rect x="2.5" y="14" width="4.5" height="6" rx="1.5"/><rect x="17" y="14" width="4.5" height="6" rx="1.5"/>' };
+      const launcherInner = st.launcherStyle === 'icon'
+        ? `<span class="cz-li icon" style="color:${czReadable(c.primary)}"><svg viewBox="0 0 24 24">${icons[st.launcherIcon] || icons.chat}</svg></span>`
+        : st.launcherStyle === 'avatar' && avatarUrl ? `<span class="cz-li"><img src="${escapeLeadCell(avatarUrl)}" alt=""></span>` : `<span class="cz-li">${logoMark}</span>`;
+      const label = st.launcherLabel.trim();
+      const starters = ((cfg.quickActions?.starters || []).filter(Boolean).length ? cfg.quickActions.starters : (cfg.faqs || []).map(f => f.question)).filter(Boolean).slice(0, 2);
+      const welcome = `<div class="cz-hero"><div class="cz-prof">${avatar('')}<div><strong>${escapeLeadCell(brand)}</strong><small>${escapeLeadCell(tagline)}</small></div></div>
+          <h4>${escapeLeadCell(st.welcomeHeading || 'How can we help?')}</h4><p>${escapeLeadCell(st.welcomeMessage || cfg.channels?.web?.greeting || `Ask me anything about ${brand}.`).slice(0, 150)}</p></div>
+        <div class="cz-body">${(starters.length ? starters : ['What do you offer?']).map(q => `<div class="cz-q"><span>${escapeLeadCell(q).slice(0, 44)}</span><b>›</b></div>`).join('')}
+          <div class="cz-acts"><span class="cz-act"><i></i>Recommend for me</span><span class="cz-act"><i></i>Book a call</span></div>
+          ${st.showContacts ? '<div class="cz-contact">Other ways to reach us · WhatsApp · Instagram</div>' : ''}</div>
+        <div class="cz-dock"><div class="cz-start">${avatar('sm')}<div><strong>${escapeLeadCell(st.startTitle || 'Send us a message')}</strong><small>${escapeLeadCell(st.startSubtitle || 'We typically reply instantly')}</small></div></div></div>`;
+      const chat = `<div class="cz-chathead">${avatar('')}<div><strong>${escapeLeadCell(brand)}</strong><small>${escapeLeadCell(tagline)}</small></div></div>
+        <div class="cz-msgs"><div class="cz-disc">${escapeLeadCell(st.disclaimer || 'AI can make mistakes. A teammate can step in anytime.')}</div>
+          <div class="cz-row">${avatar('sm')}<div class="cz-bub bot">Hi! I can answer questions, recommend products, or connect you with the team.</div></div>
+          <div class="cz-bub user">What would you recommend for my store?</div>
+          <div class="cz-row">${avatar('sm')}<div class="cz-bub bot">Here are three great fits for an online store 👇</div></div>
+          <div class="cz-chips"><span class="cz-chip">Book a call</span><span class="cz-chip">See pricing</span></div></div>
+        <div class="cz-input"><span>${escapeLeadCell(st.inputPlaceholder || `Message us about ${brand}...`)}</span><i></i></div>`;
+      stage.innerHTML = `<div class="cz-stage-site"><i class="h"></i><i style="width:90%"></i><i style="width:75%"></i><i style="width:82%"></i></div>
+        <div class="cz-w ${st.position === 'left' ? 'left' : 'right'}">
+          <div class="cz-panel">${czView === 'chat' ? chat : welcome}${st.showPoweredBy ? `<div class="cz-foot">Powered by <b>${escapeLeadCell(st.poweredByText || 'GrapeLabs')}</b></div>` : ''}</div>
+          <div class="cz-launch ${label ? 'pill' : ''}">${launcherInner}${label ? `<span class="t" style="color:${st.launcherStyle === 'icon' ? czReadable(c.primary) : '#fff'}">${escapeLeadCell(label)}</span>` : ''}</div>
+        </div>`;
+      Object.entries(vars).forEach(([key, value]) => stage.style.setProperty(key, value));
+    }
+
+    function collectAppearance() {
+      const st = czState;
+      const isBrand = Object.keys(CZ_BRAND_COLORS).every(key => (st.colors[key] || '').toUpperCase() === CZ_BRAND_COLORS[key].toUpperCase());
+      return {
+        ...st,
+        // Brand colours are the widget's built-in look: store them as "unset" so nothing changes.
+        colors: isBrand ? { primary: '', header: '', highlight: '', background: '' } : { ...st.colors },
+        offsetX: Math.max(0, Math.min(200, Number(st.offsetX) || 0)),
+        offsetY: Math.max(0, Math.min(200, Number(st.offsetY) || 0)),
+        avatarUrl: String(st.avatarUrl || '').trim(),
+        launcherLabel: String(st.launcherLabel || '').trim().slice(0, 30)
+      };
+    }
+
+    async function saveAppearance() {
+      if (!czState) return;
+      const appearance = collectAppearance();
+      if (appearance.avatarUrl && !/^https:\/\//i.test(appearance.avatarUrl)) return alert('The avatar image needs a link starting with https://');
+      const response = await fetch(`${API_BASE}/api/config/draft`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ clientId: 'grapelabs', draft: { appearance } }) });
+      const data = await response.json();
+      if (!response.ok || !data.success) return alert(data.error || 'Could not save the appearance settings.');
+      currentConfig = data.config;
+      alert('Appearance saved to Draft. Publish changes to update your website widget.');
+    }
+
+    // ===== Analytics dashboard =====
+    let analyticsData = null;
+    const INTENT_LABELS = { faq: 'General questions', consultant: 'Recommendations', pricing: 'Pricing', booking: 'Booking a call', human: 'Talk to a person / unsure', off_topic: 'Off-topic', try_it: 'Try it on my business', resource_request: 'Downloads', lead_capture_prompt: 'Lead form', lead_capture: 'Lead form', contact_cap_soft_ask: 'Contact request', system_offline: 'Bot offline', channel_disabled: 'Channel paused' };
+    const CHANNEL_LABELS = { web: 'Website', whatsapp: 'WhatsApp', instagram: 'Instagram' };
+    const fmtInt = n => Number(n || 0).toLocaleString();
+    const fmtPct = n => `${Math.round((Number(n) || 0) * 100)}%`;
+    const fmtTime = t => t ? new Date(t).toLocaleString([], { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : '—';
+    const fmtDay = d => new Date(`${d}T00:00:00`).toLocaleDateString([], { day: 'numeric', month: 'short' });
+    const tip = document.getElementById('vizTip');
+    function showTip(event, title, rows) {
+      tip.replaceChildren();
+      const head = document.createElement('div'); head.className = 'tip-title'; head.textContent = title; tip.appendChild(head);
+      rows.forEach(([color, label, value]) => {
+        const row = document.createElement('div'); row.className = 'tip-row';
+        if (color) { const key = document.createElement('i'); key.className = 'viz-key'; key.style.background = color; row.appendChild(key); }
+        const strong = document.createElement('strong'); strong.textContent = value; row.appendChild(strong);
+        const text = document.createElement('span'); text.textContent = label; text.style.color = 'var(--text-secondary)'; row.appendChild(text);
+        tip.appendChild(row);
+      });
+      tip.style.display = 'block';
+      const x = Math.min(window.innerWidth - tip.offsetWidth - 12, event.clientX + 14);
+      const y = Math.min(window.innerHeight - tip.offsetHeight - 12, event.clientY + 14);
+      tip.style.left = `${x}px`; tip.style.top = `${y}px`;
+    }
+    function hideTip() { tip.style.display = 'none'; }
+
+    async function loadAnalytics() {
+      const days = document.getElementById('anDays').value;
+      const channel = document.getElementById('anChannel').value;
+      document.getElementById('anUpdated').textContent = 'Loading…';
+      const tab = document.getElementById('tab-analytics');
+      if (!analyticsData) renderAnalyticsSkeleton(); else tab.classList.add('is-refreshing');
+      try {
+        const response = await fetch(`${API_BASE}/api/analytics/dashboard?clientId=grapelabs&days=${days}&channel=${channel}&tzOffset=${new Date().getTimezoneOffset()}`);
+        const data = await response.json();
+        if (!response.ok || !data.success) throw new Error(data.error || 'Analytics unavailable. Restart the API server if you just updated it.');
+        analyticsData = data;
+        renderAnalytics(data);
+        document.getElementById('anUpdated').textContent = `Updated ${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+      } catch (error) {
+        document.getElementById('anUpdated').textContent = error.message;
+      } finally {
+        tab.classList.remove('is-refreshing');
+      }
+    }
+
+    function renderAnalyticsSkeleton() {
+      const tile = '<div class="kpi"><div class="skeleton sk-big"></div><div class="skeleton sk-line" style="width:70%"></div><div class="skeleton sk-line" style="width:45%"></div></div>';
+      document.getElementById('anKpis').innerHTML = tile.repeat(8);
+      document.getElementById('anPerf').innerHTML = tile.repeat(4);
+      document.getElementById('anTrend').innerHTML = '<div class="skeleton sk-chart"></div>';
+      const bars = '<div class="skeleton sk-line" style="width:92%"></div><div class="skeleton sk-line" style="width:70%"></div><div class="skeleton sk-line" style="width:55%"></div><div class="skeleton sk-line" style="width:35%"></div>';
+      ['anFunnel', 'anChannels', 'anSources', 'anIntents', 'anTopQuestions', 'anUnanswered', 'anProducts', 'anLeads'].forEach(id => { document.getElementById(id).innerHTML = bars; });
+      document.getElementById('anHeatmap').innerHTML = '<div class="skeleton" style="height:180px;border-radius:14px"></div>';
+    }
+
+    function deltaHtml(current, previous, kind) {
+      if (previous === undefined || previous === null) return '';
+      if (kind === 'rate') {
+        const diff = Math.round((current - previous) * 100);
+        if (!previous && !current) return '<span class="kpi-delta">No change</span>';
+        return `<span class="kpi-delta ${diff > 0 ? 'up' : diff < 0 ? 'down' : ''}">${diff > 0 ? '▲' : diff < 0 ? '▼' : ''} ${diff > 0 ? '+' : ''}${diff} pts vs previous period</span>`;
+      }
+      if (!previous) return current ? '<span class="kpi-delta">New this period</span>' : '<span class="kpi-delta">No change</span>';
+      const change = Math.round(((current - previous) / previous) * 100);
+      return `<span class="kpi-delta ${change > 0 ? 'up' : change < 0 ? 'down' : ''}">${change > 0 ? '▲' : change < 0 ? '▼' : ''} ${change > 0 ? '+' : ''}${change}% vs previous period</span>`;
+    }
+    function kpiTile(label, value, sub, delta, icon, tone = 'purple') {
+      return `<div class="kpi">${icon ? `<span class="kpi-icon tone-${tone}"><svg class="icon"><use href="#${icon}"></use></svg></span>` : ''}<div class="kpi-value">${value}</div><div class="kpi-label">${label}</div>${sub ? `<div class="kpi-sub">${sub}</div>` : ''}${delta || ''}</div>`;
+    }
+
+    function renderAnalytics(d) {
+      const s = d.summary, p = d.previous;
+      document.getElementById('anKpis').innerHTML = [
+        kpiTile('Conversations', fmtInt(s.conversations), `${fmtInt(s.visitors)} visitors · ${fmtInt(s.userMessages)} messages`, deltaHtml(s.conversations, p.conversations), 'i-chat', 'purple'),
+        kpiTile('Leads captured', fmtInt(s.leads), `${fmtPct(s.leadConversionRate)} of visitors`, deltaHtml(s.leads, p.leads), 'i-users', 'blue'),
+        kpiTile('Lead conversion rate', fmtPct(s.leadConversionRate), 'Visitors who shared contact details', deltaHtml(s.leadConversionRate, p.leadConversionRate, 'rate'), 'i-target', 'amber'),
+        kpiTile('Calls booked', fmtInt(s.bookings), `${fmtPct(s.bookingRate)} of visitors`, deltaHtml(s.bookings, p.bookings), 'i-calendar', 'green'),
+        kpiTile('Engagement rate', fmtPct(s.engagementRate), 'Conversations with 3+ messages', deltaHtml(s.engagementRate, p.engagementRate, 'rate'), 'i-sparkles', 'teal'),
+        kpiTile('Answer rate', fmtPct(s.answerRate), `${fmtInt(s.unsureReplies)} replies the bot wasn't sure about`, deltaHtml(s.answerRate, p.answerRate, 'rate'), 'i-check', 'green'),
+        kpiTile('Handed over to team', fmtInt(s.handovers), `${fmtInt(s.handoverClicks)} WhatsApp handover taps`, deltaHtml(s.handovers, p.handovers), 'i-headset', 'blue'),
+        kpiTile('Hot leads', fmtInt(s.hotLeads), 'Reached the hot score threshold', deltaHtml(s.hotLeads, p.hotLeads), 'i-flame', 'rose')
+      ].join('');
+      document.getElementById('anPerf').innerHTML = [
+        kpiTile('Avg. messages per chat', s.avgMessagesPerConversation, 'Visitor messages', '', 'i-chat', 'purple'),
+        kpiTile('Avg. chat length', `${s.avgDurationMinutes} min`, 'First to last message', '', 'i-clock', 'teal'),
+        kpiTile('Lead form completion', fmtPct(s.leadFormCompletionRate), `${fmtInt(s.leadFormsCompleted)} of ${fmtInt(s.leadFormsShown)} shown · ${fmtInt(s.leadFormsSkipped)} skipped`, '', 'i-check', 'green'),
+        kpiTile('Downloads & clicks', fmtInt(s.resourcesUnlocked + s.productClicks), `${fmtInt(s.resourcesUnlocked)} resources · ${fmtInt(s.productClicks)} product links`, '', 'i-download', 'amber')
+      ].join('');
+      renderTrend(d.series);
+      renderFunnel(d.funnel);
+      renderBars('anChannels', d.channels.map(r => ({ label: CHANNEL_LABELS[r.label] || r.label, value: r.value })), 'conversations');
+      renderBars('anSources', d.sources.map(r => ({ label: r.label === 'direct' ? 'Direct / unknown' : r.label, value: r.value })), 'visitors');
+      renderBars('anIntents', d.intents.map(r => ({ label: INTENT_LABELS[r.label] || r.label, value: r.value })), 'replies');
+      renderHeatmap(d.heatmap);
+      document.getElementById('anTopQuestions').innerHTML = d.topQuestions.length
+        ? `<table class="viz-table"><thead><tr><th>Question</th><th style="text-align:right">Times asked</th></tr></thead><tbody>${d.topQuestions.map(q => `<tr><td>${escapeLeadCell(q.question)}</td><td class="num">${fmtInt(q.count)}</td></tr>`).join('')}</tbody></table>`
+        : '<div class="viz-empty">No questions yet in this period.</div>';
+      document.getElementById('anUnanswered').innerHTML = d.unanswered.length
+        ? `<table class="viz-table"><thead><tr><th>Question</th><th style="text-align:right">Times</th><th>Last asked</th><th></th></tr></thead><tbody>${d.unanswered.map(q => `<tr><td>${escapeLeadCell(q.question)}</td><td class="num">${fmtInt(q.count)}</td><td style="white-space:nowrap;color:var(--muted)">${fmtTime(q.at)}</td><td><button class="link-btn" type="button" data-open-conv="${escapeLeadCell(q.conversationKey)}">View latest</button></td></tr>`).join('')}</tbody></table>`
+        : '<div class="viz-empty">Every question got an answer in this period.</div>';
+      document.getElementById('anProducts').innerHTML = d.products.length
+        ? `<table class="viz-table"><thead><tr><th>Product</th><th style="text-align:right">Times shown</th><th style="text-align:right">Link clicks</th><th style="text-align:right">Click rate</th></tr></thead><tbody>${d.products.map(r => `<tr><td>${escapeLeadCell(r.name)}</td><td class="num">${fmtInt(r.shown)}</td><td class="num">${fmtInt(r.clicks)}</td><td class="num">${fmtPct(r.shown ? r.clicks / r.shown : 0)}</td></tr>`).join('')}</tbody></table>`
+        : '<div class="viz-empty">No product cards were shown in this period.</div>';
+      document.getElementById('anLeads').innerHTML = d.leads.length
+        ? `<table class="viz-table"><thead><tr><th>Name</th><th>Email</th><th>Phone</th><th>Stage</th><th style="text-align:right">Score</th><th>Source</th><th>Channel</th><th>Last active</th><th>Handed over</th><th></th></tr></thead><tbody>${d.leads.map(l => `<tr><td>${escapeLeadCell(l.name || '—')}</td><td>${escapeLeadCell(l.email || '—')}</td><td>${escapeLeadCell(l.phone || '—')}</td><td><span class="lead-stage">${escapeLeadCell(l.stage)}</span></td><td class="num">${fmtInt(l.score)}</td><td>${escapeLeadCell(l.source)}</td><td>${escapeLeadCell(CHANNEL_LABELS[l.channel] || l.channel)}</td><td style="white-space:nowrap">${fmtTime(l.lastActive)}</td><td>${l.handedOver ? 'Yes' : '—'}</td><td>${l.conversationKey ? `<button class="link-btn" type="button" data-open-conv="${escapeLeadCell(l.conversationKey)}">View chat</button>` : ''}</td></tr>`).join('')}</tbody></table>`
+        : '<div class="viz-empty">No leads in this period yet.</div>';
+      document.querySelectorAll('#tab-analytics [data-open-conv]').forEach(button => button.onclick = () => openConversationFromAnalytics(button.dataset.openConv));
+    }
+
+    function renderTrend(series) {
+      const box = document.getElementById('anTrend');
+      const W = 900, H = 240, L = 36, R = 100, T = 12, B = 26;
+      const maxV = Math.max(1, ...series.map(r => Math.max(r.conversations, r.leads)));
+      const step = maxV <= 5 ? 1 : Math.ceil(maxV / 4 / 5) * 5;
+      const top = Math.ceil(maxV / step) * step;
+      const x = i => L + (series.length <= 1 ? 0 : (i * (W - L - R)) / (series.length - 1));
+      const y = v => T + (H - T - B) * (1 - v / top);
+      const line = key => series.map((r, i) => `${i ? 'L' : 'M'}${x(i).toFixed(1)},${y(r[key]).toFixed(1)}`).join('');
+      const grid = []; for (let v = 0; v <= top; v += step) grid.push(`<line x1="${L}" x2="${W - R}" y1="${y(v)}" y2="${y(v)}" stroke="var(--grid)"/><text x="${L - 8}" y="${y(v) + 3.5}" text-anchor="end">${v}</text>`);
+      const every = Math.max(1, Math.ceil(series.length / 8));
+      const xLabels = series.map((r, i) => i % every === 0 || i === series.length - 1 ? `<text x="${x(i)}" y="${H - 6}" text-anchor="middle">${fmtDay(r.date)}</text>` : '').join('');
+      const last = series[series.length - 1] || { conversations: 0, leads: 0 };
+      const labelY = [y(last.conversations), y(last.leads)];
+      if (Math.abs(labelY[0] - labelY[1]) < 14) { if (labelY[0] <= labelY[1]) labelY[1] = labelY[0] + 14; else labelY[0] = labelY[1] + 14; }
+      box.innerHTML = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Conversations and leads per day"><g class="viz-axis">${grid.join('')}${xLabels}</g>
+        <path d="${line('conversations')}" fill="none" stroke="var(--series-1)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+        <path d="${line('leads')}" fill="none" stroke="var(--series-2)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+        <text x="${x(series.length - 1) + 8}" y="${labelY[0] + 4}" font-size="11" fill="var(--text-secondary)">Conversations</text>
+        <text x="${x(series.length - 1) + 8}" y="${labelY[1] + 4}" font-size="11" fill="var(--text-secondary)">Leads</text>
+        <line id="anCross" x1="0" x2="0" y1="${T}" y2="${H - B}" stroke="var(--axis)" stroke-dasharray="3 3" style="display:none"/>
+        <circle id="anDot1" r="4" fill="var(--series-1)" stroke="#fff" stroke-width="2" style="display:none"/><circle id="anDot2" r="4" fill="var(--series-2)" stroke="#fff" stroke-width="2" style="display:none"/>
+        <rect x="${L}" y="${T}" width="${W - L - R}" height="${H - T - B}" fill="transparent" id="anHit"/></svg>`;
+      const svg = box.querySelector('svg');
+      const hit = box.querySelector('#anHit');
+      hit.addEventListener('pointermove', event => {
+        const pt = svg.createSVGPoint(); pt.x = event.clientX; pt.y = event.clientY;
+        const loc = pt.matrixTransform(svg.getScreenCTM().inverse());
+        const i = Math.max(0, Math.min(series.length - 1, Math.round(((loc.x - L) / (W - L - R)) * (series.length - 1))));
+        const r = series[i];
+        const cross = box.querySelector('#anCross'); cross.setAttribute('x1', x(i)); cross.setAttribute('x2', x(i)); cross.style.display = '';
+        [['#anDot1', r.conversations], ['#anDot2', r.leads]].forEach(([id, v]) => { const dot = box.querySelector(id); dot.setAttribute('cx', x(i)); dot.setAttribute('cy', y(v)); dot.style.display = ''; });
+        showTip(event, new Date(`${r.date}T00:00:00`).toLocaleDateString([], { weekday: 'short', day: 'numeric', month: 'short' }), [['var(--series-1)', 'conversations', fmtInt(r.conversations)], ['var(--series-2)', 'leads', fmtInt(r.leads)], ['', 'visitor messages', fmtInt(r.messages)]]);
+      });
+      hit.addEventListener('pointerleave', () => { hideTip(); ['#anCross', '#anDot1', '#anDot2'].forEach(id => box.querySelector(id).style.display = 'none'); });
+      document.getElementById('anTrendTable').innerHTML = `<table class="viz-table"><thead><tr><th>Day</th><th style="text-align:right">Conversations</th><th style="text-align:right">Leads</th><th style="text-align:right">Visitor messages</th></tr></thead><tbody>${series.map(r => `<tr><td>${fmtDay(r.date)}</td><td class="num">${r.conversations}</td><td class="num">${r.leads}</td><td class="num">${r.messages}</td></tr>`).join('')}</tbody></table>`;
+    }
+    function toggleTrendTable() {
+      const table = document.getElementById('anTrendTable');
+      const show = table.style.display === 'none';
+      table.style.display = show ? 'block' : 'none';
+      document.getElementById('anTrend').style.display = show ? 'none' : 'block';
+      document.getElementById('anTrendToggle').textContent = show ? 'View as chart' : 'View as table';
+    }
+
+    function renderBars(id, rows, unit, colors) {
+      const box = document.getElementById(id);
+      if (!rows.length) { box.innerHTML = '<div class="viz-empty">No data in this period.</div>'; return; }
+      const max = Math.max(1, ...rows.map(r => r.value));
+      const total = rows.reduce((sum, r) => sum + r.value, 0);
+      box.innerHTML = `<div class="hbar-list">${rows.map((r, i) => `<div class="hbar" data-bar="${i}"><span class="hbar-label" title="${escapeLeadCell(r.label)}">${escapeLeadCell(r.label)}</span><span class="hbar-track"><span class="hbar-fill" style="width:${(r.value / max) * 100}%;background:${colors ? colors[i] : 'var(--series-1)'}"></span></span><span class="hbar-value">${r.display || fmtInt(r.value)}</span></div>`).join('')}</div>`;
+      box.querySelectorAll('[data-bar]').forEach(el => {
+        const r = rows[Number(el.dataset.bar)];
+        el.addEventListener('pointermove', event => showTip(event, r.label, [[colors ? colors[Number(el.dataset.bar)] : 'var(--series-1)', `${unit}${r.extra ? ` · ${r.extra}` : ` · ${fmtPct(r.value / total)} of total`}`, fmtInt(r.value)]]));
+        el.addEventListener('pointerleave', hideTip);
+      });
+    }
+    function renderFunnel(funnel) {
+      const top = funnel[0]?.count || 0;
+      const ramp = ['var(--ord-1)', 'var(--ord-2)', 'var(--ord-3)', 'var(--ord-4)', 'var(--ord-5)'];
+      renderBars('anFunnel', funnel.map((f, i) => ({ label: f.stage, value: f.count, display: `${fmtInt(f.count)} · ${fmtPct(top ? f.count / top : 0)}`, extra: i ? `${fmtPct(funnel[i - 1].count ? f.count / funnel[i - 1].count : 0)} of previous step` : 'everyone who chatted' })), 'people', ramp);
+    }
+    function renderHeatmap(matrix) {
+      const box = document.getElementById('anHeatmap');
+      const max = Math.max(0, ...matrix.flat());
+      const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+      const steps = ['var(--seq-0)', 'var(--seq-1)', 'var(--seq-2)', 'var(--seq-3)', 'var(--seq-4)', 'var(--seq-5)'];
+      const color = v => v === 0 ? 'var(--seq-0)' : steps[Math.min(5, 1 + Math.floor((v / max) * 4.999))];
+      let html = '<div class="heatmap"><span></span>' + Array.from({ length: 24 }, (_, h) => `<span class="hlabel">${h % 3 === 0 ? h : ''}</span>`).join('');
+      matrix.forEach((row, d) => { html += `<span>${days[d]}</span>` + row.map((v, h) => `<span class="cell" data-d="${d}" data-h="${h}" style="background:${color(v)}"></span>`).join(''); });
+      html += '</div><div class="heat-scale"><span>Fewer</span>' + steps.map(c => `<i style="background:${c}"></i>`).join('') + '<span>More</span></div>';
+      box.innerHTML = max ? html : '<div class="viz-empty">No visitor messages in this period.</div>';
+      box.querySelectorAll('.cell').forEach(cell => {
+        const d = Number(cell.dataset.d), h = Number(cell.dataset.h);
+        cell.addEventListener('pointermove', event => showTip(event, `${days[d]} ${String(h).padStart(2, '0')}:00–${String((h + 1) % 24).padStart(2, '0')}:00`, [['', 'visitor messages', fmtInt(matrix[d][h])]]));
+        cell.addEventListener('pointerleave', hideTip);
+      });
+    }
+    function csvCell(value) { const text = String(value ?? ''); return /[",\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text; }
+    function downloadCsv(name, rows) {
+      const blob = new Blob(['﻿' + rows.map(r => r.map(csvCell).join(',')).join('\n')], { type: 'text/csv;charset=utf-8' });
+      const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+    }
+    function exportLeadsCsv() {
+      if (!analyticsData?.leads?.length) return alert('No leads to export for this period.');
+      downloadCsv(`leads-${new Date().toISOString().slice(0, 10)}.csv`, [['Name', 'Email', 'Phone', 'Company', 'Stage', 'Score', 'Source', 'Channel', 'First seen', 'Last active', 'Handed over'],
+        ...analyticsData.leads.map(l => [l.name, l.email, l.phone, l.company, l.stage, l.score, l.source, l.channel, new Date(l.firstSeen).toISOString(), new Date(l.lastActive).toISOString(), l.handedOver ? 'Yes' : 'No'])]);
+    }
+    function openConversationFromAnalytics(key) {
+      switchTab('conversations');
+      if (!conversationState.loaded) loadConversations().then(() => openConversation(key)); else openConversation(key);
+    }
+
+    // ===== Chat history =====
+    const conversationState = { loaded: false, items: [], total: 0, filter: 'all', activeKey: null };
+    const CONV_FILTERS = [['all', 'All'], ['lead', 'Leads'], ['handover', 'Handed over'], ['unsure', 'Bot unsure'], ['booking', 'Booking']];
+    function renderConversationFilters() {
+      document.getElementById('convFilters').innerHTML = CONV_FILTERS.map(([id, label]) => `<button type="button" class="chip-filter ${conversationState.filter === id ? 'on' : ''}" onclick="setConversationFilter('${id}')">${label}</button>`).join('');
+    }
+    function setConversationFilter(id) { conversationState.filter = id; renderConversationFilters(); loadConversations(); }
+    let convSearchTimer = null;
+    document.getElementById('convSearch').addEventListener('input', () => { clearTimeout(convSearchTimer); convSearchTimer = setTimeout(() => loadConversations(), 300); });
+    async function loadConversations(more = false) {
+      renderConversationFilters();
+      const params = new URLSearchParams({ clientId: 'grapelabs', q: document.getElementById('convSearch').value.trim(), days: document.getElementById('convDays').value, channel: document.getElementById('convChannel').value, filter: conversationState.filter, limit: 50, offset: more ? conversationState.items.length : 0 });
+      document.getElementById('convCount').textContent = 'Loading…';
+      if (!more) document.getElementById('convList').innerHTML = '<div class="skeleton sk-row"></div>'.repeat(6);
+      try {
+        const response = await fetch(`${API_BASE}/api/conversations?${params}`);
+        const data = await response.json();
+        if (!response.ok || !data.success) throw new Error(data.error || 'Conversation history unavailable. Restart the API server if you just updated it.');
+        conversationState.loaded = true;
+        conversationState.items = more ? conversationState.items.concat(data.conversations) : data.conversations;
+        conversationState.total = data.total;
+        renderConversationList();
+      } catch (error) { document.getElementById('convCount').textContent = error.message; }
+    }
+    function highlight(text, query) {
+      const safe = escapeLeadCell(text || '');
+      const term = (query || '').trim().split(/\s+/)[0];
+      if (!term) return safe;
+      const re = new RegExp(`(${term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'ig');
+      return safe.replace(re, '<mark>$1</mark>');
+    }
+    function renderConversationList() {
+      const query = document.getElementById('convSearch').value;
+      document.getElementById('convCount').textContent = `${fmtInt(conversationState.total)} conversation${conversationState.total === 1 ? '' : 's'}`;
+      document.getElementById('convMore').style.display = conversationState.items.length < conversationState.total ? 'block' : 'none';
+      const list = document.getElementById('convList');
+      list.innerHTML = conversationState.items.length ? conversationState.items.map(c => `<button type="button" class="conv-item ${c.key === conversationState.activeKey ? 'active' : ''}" data-key="${escapeLeadCell(c.key)}">
+        <div class="conv-top"><span>${escapeLeadCell(c.name || c.email || c.phone || 'Anonymous visitor')}</span><small>${fmtTime(c.lastAt)}</small></div>
+        <div class="conv-preview">${highlight(c.match || c.preview, query)}</div>
+        <div><span class="flag" style="background:#f4f4f6;color:#555">${escapeLeadCell(CHANNEL_LABELS[c.channel] || c.channel)} · ${c.userMessages} msg</span>${c.flags.lead ? '<span class="flag">Lead</span>' : ''}${c.flags.handover ? '<span class="flag handover">Handed over</span>' : ''}${c.flags.unsure ? '<span class="flag unsure">Bot unsure</span>' : ''}${c.flags.booking ? '<span class="flag booking">Booking</span>' : ''}</div></button>`).join('') : '<div class="viz-empty">No conversations match.</div>';
+      list.querySelectorAll('[data-key]').forEach(item => item.onclick = () => openConversation(item.dataset.key));
+    }
+    async function openConversation(key) {
+      conversationState.activeKey = key;
+      renderConversationList();
+      const box = document.getElementById('convDetail');
+      box.innerHTML = '<div class="skeleton sk-big" style="width:40%"></div><div class="skeleton sk-line" style="width:60%"></div><div class="skeleton sk-line" style="width:50%;margin-bottom:18px"></div>' + ['62%', '48%', '70%', '40%', '58%'].map((w, i) => `<div class="skeleton" style="height:38px;width:${w};border-radius:14px;margin:10px 0 10px ${i % 2 ? 'auto' : '0'}"></div>`).join('');
+      try {
+        const response = await fetch(`${API_BASE}/api/conversations/${encodeURIComponent(key)}?clientId=grapelabs`);
+        const data = await response.json();
+        if (!response.ok || !data.success) throw new Error(data.error || 'Could not load this conversation.');
+        const c = data.conversation, p = c.person;
+        const field = (label, value) => value ? `<div><span>${label}</span>${escapeLeadCell(value)}</div>` : '';
+        const eventLabels = { lead_contact_captured: 'Shared contact', lead_identified: 'Identified', lead_hot: 'Became hot lead', booked: 'Booked a call', human_requested: 'Asked for a person', handover_whatsapp_clicked: 'Opened WhatsApp handover', resource_unlocked: 'Unlocked resource', resource_downloaded: 'Downloaded resource', lead_capture_skipped: 'Skipped lead form', product_cta_clicked: 'Clicked product link', profiles_merged: 'Profiles merged' };
+        box.innerHTML = `<div class="card-title" style="margin-bottom:10px"><span>${escapeLeadCell(p.name || p.email || p.phone || 'Anonymous visitor')} <span class="lead-stage" style="margin-left:6px">${escapeLeadCell(p.stage)}</span></span><span style="font-size:12px;color:var(--muted);font-weight:500">Score ${fmtInt(p.score)}</span></div>
+          <div class="person-grid">${field('Email', p.email)}${field('Phone', p.phone)}${field('Company', p.company)}${field('Website', p.website)}${field('Industry', p.industry)}${field('Main challenge', p.pains)}${field('Source', p.source)}${field('First seen', fmtTime(p.firstSeen))}${field('Products shown', (p.productsRecommended || []).slice(0, 5).join(', '))}${field('Resources unlocked', (p.resourcesUnlocked || []).join(', '))}</div>
+          ${c.events.length ? `<div class="event-chips">${c.events.slice(0, 12).map(e => `<span class="flag" title="${escapeLeadCell(fmtTime(e.at))}">${escapeLeadCell(eventLabels[e.name] || e.name)}${e.title ? `: ${escapeLeadCell(e.title)}` : ''}</span>`).join('')}</div>` : ''}
+          <div class="transcript" id="convTranscript">${c.messages.map(m => {
+            const isForm = m.role === 'user' && m.intent === 'lead_capture';
+            const cls = isForm ? 'system' : m.role === 'user' ? 'user' : 'assistant';
+            const meta = [fmtTime(m.at), m.role === 'assistant' && m.intent ? (INTENT_LABELS[m.intent] || m.intent) : '', m.cards.length ? `Products: ${m.cards.join(', ')}` : ''].filter(Boolean).join(' · ');
+            return `<div class="t-msg ${cls}">${escapeLeadCell(isForm ? m.text.replace(/^\[Shared via lead form\]\s*/, 'Shared via form: ') : m.text)}<div class="t-meta">${escapeLeadCell(meta)}</div></div>`;
+          }).join('') || '<div class="viz-empty">No messages.</div>'}</div>`;
+        const transcript = document.getElementById('convTranscript'); transcript.scrollTop = transcript.scrollHeight;
+      } catch (error) { box.innerHTML = `<div class="viz-empty">${escapeLeadCell(error.message)}</div>`; }
+    }
+    async function exportConversationsCsv() {
+      const params = new URLSearchParams({ clientId: 'grapelabs', q: document.getElementById('convSearch').value.trim(), days: document.getElementById('convDays').value, channel: document.getElementById('convChannel').value, filter: conversationState.filter, limit: 200, offset: 0 });
+      const rows = [];
+      let offset = 0, total = 1;
+      while (offset < total && offset < 5000) {
+        params.set('offset', offset);
+        const data = await (await fetch(`${API_BASE}/api/conversations?${params}`)).json();
+        if (!data.success) return alert(data.error || 'Export failed.');
+        total = data.total; offset += data.conversations.length;
+        data.conversations.forEach(c => rows.push([c.name, c.email, c.phone, CHANNEL_LABELS[c.channel] || c.channel, c.stage, c.score, new Date(c.startedAt).toISOString(), new Date(c.lastAt).toISOString(), c.userMessages, c.flags.lead ? 'Yes' : 'No', c.flags.handover ? 'Yes' : 'No', c.flags.unsure ? 'Yes' : 'No', c.preview]));
+        if (!data.conversations.length) break;
+      }
+      if (!rows.length) return alert('No conversations to export.');
+      downloadCsv(`conversations-${new Date().toISOString().slice(0, 10)}.csv`, [['Name', 'Email', 'Phone', 'Channel', 'Stage', 'Score', 'Started', 'Last message', 'Visitor messages', 'Lead', 'Handed over', 'Bot unsure', 'Last question'], ...rows]);
     }
 
     // Human handover (WhatsApp redirect)
@@ -1849,7 +2799,91 @@
       alert('Draft saved.');
     }
 
-    loadConfig();
+    // ===== UI shell: loading states, toasts, search, status =====
+    (function setupShell() {
+      const bar = document.getElementById('topProgress');
+      let inFlight = 0, hideTimer = null, lastClicked = null, lastClickAt = 0;
+      const start = () => {
+        clearTimeout(hideTimer);
+        if (inFlight === 1) { bar.style.transition = 'none'; bar.style.width = '0'; bar.offsetWidth; bar.style.transition = ''; }
+        bar.style.opacity = '1';
+        requestAnimationFrame(() => { bar.style.width = '72%'; });
+      };
+      const done = () => {
+        bar.style.width = '100%';
+        hideTimer = setTimeout(() => { bar.style.opacity = '0'; }, 220);
+      };
+      document.addEventListener('click', event => {
+        const button = event.target.closest('button');
+        if (button && !button.closest('.segmented') && !button.closest('.chip-filters')) { lastClicked = button; lastClickAt = Date.now(); }
+      }, true);
+      const nativeFetch = window.fetch.bind(window);
+      window.fetch = (...args) => {
+        inFlight++; start();
+        // A request started right after a button click shows a spinner on that button until it finishes.
+        const button = lastClicked && Date.now() - lastClickAt < 600 && !lastClicked.disabled ? lastClicked : null;
+        if (button) { button.classList.add('is-loading'); button.setAttribute('aria-busy', 'true'); lastClicked = null; }
+        return nativeFetch(...args).finally(() => {
+          inFlight = Math.max(0, inFlight - 1);
+          if (!inFlight) done();
+          if (button) { button.classList.remove('is-loading'); button.removeAttribute('aria-busy'); }
+        });
+      };
+      // Friendly toast messages instead of browser alert boxes (confirmations stay as dialogs).
+      window.showToast = (message, type) => {
+        const text = String(message ?? '');
+        const kind = type || (/could not|couldn|failed|error|invalid|needs|enter |every |add at least|required|unavailable|up to \d/i.test(text) ? 'error'
+          : /saved|published|success|uploaded|generated|copied|rolled back/i.test(text) ? 'success' : 'info');
+        const toast = document.createElement('div');
+        toast.className = `toast ${kind}`;
+        toast.setAttribute('role', kind === 'error' ? 'alert' : 'status');
+        const icon = document.createElement('i');
+        icon.textContent = kind === 'success' ? '✓' : kind === 'error' ? '!' : 'i';
+        const body = document.createElement('div');
+        body.textContent = text;
+        toast.append(icon, body);
+        document.getElementById('toastStack').appendChild(toast);
+        setTimeout(() => { toast.classList.add('leaving'); setTimeout(() => toast.remove(), 220); }, kind === 'error' ? 6500 : 4000);
+      };
+      window.alert = message => window.showToast(message);
+
+      // Top search opens Conversations with the query
+      const search = document.getElementById('topSearch');
+      search.addEventListener('keydown', event => {
+        if (event.key !== 'Enter') return;
+        switchTab('conversations');
+        document.getElementById('convSearch').value = search.value;
+        loadConversations();
+      });
+      document.addEventListener('keydown', event => {
+        if (event.key === '/' && !/input|textarea|select/i.test(document.activeElement.tagName)) { event.preventDefault(); search.focus(); }
+      });
+
+      // Segmented date range on the dashboard
+      document.querySelectorAll('#anDaysSeg button').forEach(button => button.addEventListener('click', () => {
+        document.querySelectorAll('#anDaysSeg button').forEach(b => b.classList.toggle('on', b === button));
+        document.getElementById('anDays').value = button.dataset.days;
+        loadAnalytics();
+      }));
+    })();
+
+    function updateShellStatus(cfg) {
+      const name = cfg.branding?.brandName || cfg.name || 'GrapeLabs';
+      const live = cfg.active !== false;
+      document.getElementById('sideBrandName').textContent = name;
+      document.getElementById('topBrandName').textContent = name;
+      document.getElementById('topAvatar').textContent = name.split(/\s+/).map(word => word[0]).join('').slice(0, 2).toUpperCase();
+      ['sideLiveDot', 'topLiveDot'].forEach(id => document.getElementById(id).classList.toggle('off', !live));
+      document.getElementById('sideStatusText').textContent = live ? 'Bot is live' : 'Bot is paused';
+      document.getElementById('sideStatusSub').textContent = `Live config v${cfg.promptVersion || 1}${cfg.draft ? ' · unpublished changes' : ''}`;
+    }
+
+    // Boot: show the dashboard as soon as settings and analytics have loaded
+    Promise.allSettled([loadConfig(), loadAnalytics()]).finally(() => {
+      const boot = document.getElementById('bootLoader');
+      boot.style.opacity = '0';
+      setTimeout(() => boot.remove(), 380);
+    });
   </script>
 </body>
 </html>

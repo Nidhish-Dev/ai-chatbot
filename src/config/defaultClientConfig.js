@@ -100,6 +100,36 @@ module.exports = {
     ]
   },
 
+  // Chat widget appearance (control panel -> Customise). Empty values keep the widget's built-in look.
+  appearance: {
+    preset: 'brand',
+    theme: 'light',                 // light | dark | auto (follow the visitor's device)
+    colors: { primary: '', header: '', highlight: '', background: '' },
+    headerStyle: 'gradient',        // gradient | solid
+    position: 'right',              // right | left
+    offsetX: 24,
+    offsetY: 24,
+    launcherStyle: 'logo',          // logo | icon | avatar
+    launcherIcon: 'chat',           // chat | sparkle | headset
+    launcherLabel: '',              // e.g. "Chat with us" turns the launcher into a pill
+    launcherSize: 'md',             // sm | md | lg
+    panelWidth: 'standard',         // compact | standard | wide
+    corners: 'rounded',             // rounded | soft | square
+    font: 'system',                 // system | inter | poppins | dm-sans | nunito
+    bubbleStyle: 'rounded',         // rounded | square
+    avatarUrl: '',                  // empty = brand logo
+    avatarShape: 'circle',          // circle | rounded
+    welcomeHeading: '',
+    welcomeMessage: '',
+    startTitle: '',
+    startSubtitle: '',
+    inputPlaceholder: '',
+    disclaimer: '',
+    showContacts: true,
+    showPoweredBy: true,
+    poweredByText: ''
+  },
+
   // Human handover: redirect to a normal WhatsApp chat (wa.me link, no WhatsApp API) with the
   // visitor's details and last message pre-filled. Configured in the control panel → Human handover.
   handover: {
